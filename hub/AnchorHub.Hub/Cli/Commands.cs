@@ -252,6 +252,28 @@ internal static class Commands
         return 0;
     }
 
+    // Prints the selected Outlook item as one JSON line (with its anchor URI),
+    // so other tools (ContextSwitcher, koppter) can store the link.
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookCapture()
+    {
+        Console.WriteLine(Outlook.OutlookClient.Capture().ToJsonString());
+        return 0;
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookOpen(string uri)
+    {
+        var anchor = OutlookAnchor.TryParse(uri);
+        if (anchor is null)
+        {
+            Console.Error.WriteLine("Not an anchor://outlook/message/... URI.");
+            return 1;
+        }
+        Outlook.OutlookClient.Open(anchor);
+        return 0;
+    }
+
     public static int Unknown(string cmd)
     {
         Console.Error.WriteLine($"Unknown command: {cmd}");

@@ -162,10 +162,11 @@ if (listenArg is not null)
     return await TcpListenerHost.RunAsync(listenEndpoint, listenBackend, authToken);
 }
 
-// The lookup / lookup-name / search-wsi CLI commands drive OneNote directly,
+// The lookup / lookup-name / search-wsi CLI commands drive OneNote (and the
+// outlook-* ones Outlook) over COM,
 // so they are Windows-only too. Anything else (no args, flags only, or an
 // unknown first token) falls through to the native-messaging host below.
-var knownCmds = new HashSet<string> { "lookup", "lookup-name", "search-wsi" };
+var knownCmds = new HashSet<string> { "lookup", "lookup-name", "search-wsi", "outlook-capture", "outlook-open" };
 if (args.Length > 0 &&
     !args[0].StartsWith("--", StringComparison.Ordinal) &&
     knownCmds.Contains(args[0]))
@@ -183,6 +184,10 @@ if (args.Length > 0 &&
             "search-wsi"  => args.Length < 2
                                 ? Commands.Unknown("search-wsi (missing url)")
                                 : Commands.SearchWsi(args[1]),
+            "outlook-capture" => Commands.OutlookCapture(),
+            "outlook-open" => args.Length < 2
+                                ? Commands.Unknown("outlook-open (missing anchor URI)")
+                                : Commands.OutlookOpen(args[1]),
             _             => Commands.Unknown(args[0]),
         };
     }

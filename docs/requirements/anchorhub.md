@@ -2182,6 +2182,35 @@ section is hidden.
 
 Needs: impl
 
+## Outlook Integration
+
+Classic desktop Outlook, reached over COM (Windows only). An Outlook item
+gets a stable anchor URI that other tools — ContextSwitcher tasks, koppter
+task notes — store and later open again.
+
+### Capture an Outlook item as an anchor
+`req~ank.outlook.capture~1`
+
+`ankd outlook-capture` prints one JSON line describing the Outlook item
+the user is looking at: the item of the active inspector window, else the
+first selected item of the active explorer. The line carries `entryId`,
+`storeId`, `subject`, `sender`, `received` (ISO 8601) and `anchor`:
+`anchor://outlook/message/<EntryID>?x-store=<StoreID>&title=<subject>&v=1`,
+each value percent-encoded. When Outlook is not running or nothing is
+selected, the command exits non-zero with the reason on stderr.
+
+Needs: impl, utest
+
+### Open an Outlook anchor
+`req~ank.outlook.open~1`
+
+`ankd outlook-open <anchor>` opens the item an
+`anchor://outlook/message/…` URI names in its own Outlook window, starting
+Outlook when it is not running. The item is resolved by EntryID within the
+store named by `x-store`, or across all stores when `x-store` is absent.
+
+Needs: impl, utest
+
 ## Settings
 
 ### Adapter enable toggles

@@ -29,7 +29,8 @@ hub/
   AnchorHub.Core/          URL normaliser + per-host helpers, IOneNoteBackend (shared)
   AnchorHub.Core.Tests/    xUnit tests for Core
   AnchorHub.Hub/           Daemon (.NET 8 / multi-target net8.0;net8.0-windows) → ankd
-    Cli/Commands.cs            CLI entry points (lookup, lookup-name, search-wsi) — Windows-only
+    Cli/Commands.cs            CLI entry points (lookup, lookup-name, search-wsi, outlook-*) — Windows-only
+    Outlook/OutlookClient.cs   Classic Outlook COM via one-shot PowerShell — Windows-only
     NativeMessaging/
       NativeMessagingHost.cs   Stdin/stdout host (direct mode, Windows-only)
       MessageHandler.cs        Routes actions to IOneNoteBackend
@@ -229,5 +230,6 @@ Do this in the same commit as the code change.
 | Test a name lookup manually | `dotnet run --project hub/AnchorHub.Hub -- lookup-name "Sven Apel"` |
 | Regenerate icons (new colour) | `powershell -ExecutionPolicy Bypass -File extension\icons\generate-icons.ps1` |
 | Add a new native action | PS script in `OneNoteClient.cs` → `OneNoteClient` method → `MessageHandler` case |
+| Capture / open an Outlook mail | `dotnet run --project hub/AnchorHub.Hub -- outlook-capture`, then `-- outlook-open "<anchor>"` |
 | Change cache TTL | `CACHE_TTL_MS` constant in `extension/background.js` |
 | View daemon logs | `%APPDATA%\AnchorHub\logs\host-YYYYMMDD.log` |
