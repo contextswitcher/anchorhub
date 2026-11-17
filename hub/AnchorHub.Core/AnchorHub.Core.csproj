@@ -9,7 +9,7 @@
   <ItemGroup>
     <!-- Reads the OneMore add-in's full-text index (OneMore.db). The bundled
          e_sqlite3 ships FTS5 with the trigram tokenizer. -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.15" />
   </ItemGroup>
 
 </Project>
