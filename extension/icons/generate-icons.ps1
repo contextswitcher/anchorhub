@@ -99,42 +99,80 @@ function Make-CenteredSquare {
     $bmp.Dispose()
 }
 
-# Filled-circle states (match results). Colours from Paul Tol's light
-# qualitative scheme — mint and olive read as visibly different hues
-# (bright green-cyan vs muted yellow-green) where the previous bright
-# green + teal pair was hard to tell apart at 16px. State names
-# ('green', 'host', 'yellow') are historical file labels and don't
-# track the rendered hue.
+# Ship's anchor drawn in a 100x100 design box, scaled to the canvas.
+# $Ratio shrinks it around the centre (searching state), $Stroke is the
+# line width in design units (thin = "no match").
+function Make-Anchor {
+    param([int]$Size, [string]$HexColor, [float]$Ratio, [float]$Stroke, [string]$OutPath)
+
+    $bmp = New-Object System.Drawing.Bitmap($Size, $Size)
+    $g   = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.Clear([System.Drawing.Color]::Transparent)
+
+    $scale = ($Size - 2) / 100.0 * $Ratio          # 1px margin at full size
+    $off   = ($Size - 100 * $scale) / 2.0
+    $g.TranslateTransform([float]$off, [float]$off)
+    $g.ScaleTransform([float]$scale, [float]$scale)
+
+    $color = [System.Drawing.ColorTranslator]::FromHtml($HexColor)
+    $pen   = New-Object System.Drawing.Pen($color, $Stroke)
+    $pen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
+    $pen.EndCap   = [System.Drawing.Drawing2D.LineCap]::Round
+    $brush = New-Object System.Drawing.SolidBrush($color)
+
+    $g.DrawEllipse($pen, 41.0, 6.0, 18.0, 18.0)        # ring
+    $g.DrawLine($pen, 50, 24, 50, 88)                  # shaft
+    $g.DrawLine($pen, 34, 38, 66, 38)                  # stock
+    $g.DrawArc($pen, 18.0, 24.0, 64.0, 64.0, 0.0, 180.0)  # arms
+    $left  = [System.Drawing.PointF[]]@(
+        (New-Object System.Drawing.PointF(18, 42)),
+        (New-Object System.Drawing.PointF(6, 58)),
+        (New-Object System.Drawing.PointF(30, 58)))
+    $right = [System.Drawing.PointF[]]@(
+        (New-Object System.Drawing.PointF(82, 42)),
+        (New-Object System.Drawing.PointF(70, 58)),
+        (New-Object System.Drawing.PointF(94, 58)))
+    $g.FillPolygon($brush, $left)                      # flukes
+    $g.FillPolygon($brush, $right)
+
+    $brush.Dispose(); $pen.Dispose(); $g.Dispose()
+    $bmp.Save($OutPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+}
+
+# Result states — full-size solid anchor, colour = kind of result.
 $filledStates = @{
     'green'  = '#44BB99'  # exact match — Tol light mint
     'host'   = '#AAAA00'  # host-only / related — Tol light olive
-    'yellow' = '#EE7733'  # not connected — Tol vibrant orange (unchanged)
+    'yellow' = '#EE7733'  # not connected — Tol vibrant orange
 }
 foreach ($name in $filledStates.Keys) {
     foreach ($size in 16, 32, 48) {
         $out = Join-Path $here "$name-$size.png"
-        Make-FilledCircle -Size $size -HexColor $filledStates[$name] -OutPath $out
-        Write-Host "wrote $out  filled circle  $($filledStates[$name])"
+        Make-Anchor -Size $size -HexColor $filledStates[$name] -Ratio 1.0 -Stroke 13 -OutPath $out
+        Write-Host "wrote $out  anchor  $($filledStates[$name])"
     }
 }
 
-# Hollow ring — no match. Same gray as the searching state — shape
-# alone (hollow ring vs small filled square vs full filled circle)
-# distinguishes the lookup phase. Avoids a "red sea" of negatives on
-# link-dense pages where most links aren't anchored.
-$ringColour = '#BBBBBB'  # Tol grey
+# No match — thin gray anchor (same gray as searching; weight and size
+# distinguish the lookup phase). Keeps link-dense pages quiet.
 foreach ($size in 16, 32, 48) {
     $out = Join-Path $here "notfound-$size.png"
-    Make-HollowRing -Size $size -HexColor $ringColour -OutPath $out
-    Write-Host "wrote $out  hollow ring    $ringColour"
+    Make-Anchor -Size $size -HexColor '#BBBBBB' -Ratio 1.0 -Stroke 8 -OutPath $out
+    Write-Host "wrote $out  thin anchor  #BBBBBB"
 }
 
-# Searching — small centred gray square. Smaller than the result icons
-# so the "round thing enlarges" once the lookup completes.
-$searchColour = '#BBBBBB'  # Tol grey — neutral / in-progress
-$searchRatio  = 0.5         # square edge = 50% of canvas → ~8px at 16, 16px at 32
+# Searching — small solid gray anchor, centred; enlarges when the result lands.
 foreach ($size in 16, 32, 48) {
     $out = Join-Path $here "default-$size.png"
-    Make-CenteredSquare -Size $size -HexColor $searchColour -Ratio $searchRatio -OutPath $out
-    Write-Host "wrote $out  small square   $searchColour  ratio=$searchRatio"
+    Make-Anchor -Size $size -HexColor '#BBBBBB' -Ratio 0.6 -Stroke 14 -OutPath $out
+    Write-Host "wrote $out  small anchor  #BBBBBB"
+}
+
+# Brand icon (extension manager, about:addons) — Tol bright blue.
+foreach ($size in 16, 32, 48, 96, 128) {
+    $out = Join-Path $here "anchor-$size.png"
+    Make-Anchor -Size $size -HexColor '#4477AA' -Ratio 1.0 -Stroke 13 -OutPath $out
+    Write-Host "wrote $out  brand anchor  #4477AA"
 }

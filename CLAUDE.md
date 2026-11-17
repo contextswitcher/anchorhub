@@ -125,14 +125,14 @@ From Paul Tol's bright + vibrant qualitative schemes (all colour-blind
 safe). **Shape** encodes the lookup phase (so colour-blind users get a
 second cue), **colour** encodes the kind of result.
 
-- **Filled circle** (full size) — a result is in. Colour says which:
+- **Solid anchor** (full size) — a result is in. Colour says which:
   green = exact match, teal = related, orange = daemon disconnected.
-- **Hollow gray ring** (full size) — lookup completed, no OneNote
-  match. Same gray hue as the searching square; shape alone
-  distinguishes the lookup phase (hollow ring vs small filled square
-  vs full filled circle). Keeps link-dense pages quiet — no "red sea"
+- **Thin-stroke gray anchor** (full size) — lookup completed, no OneNote
+  match. Same gray hue as the searching anchor; weight/size alone
+  distinguishes the lookup phase (thin vs small solid
+  vs full solid anchor). Keeps link-dense pages quiet — no "red sea"
   of negatives when most links aren't anchored.
-- **Small filled gray square** (~50% of canvas, centred) — lookup in
+- **Small solid gray anchor** (~60% of canvas, centred) — lookup in
   progress. Smaller-than-result footprint so the "round thing
   enlarges" from the same centre when the result lands.
 
@@ -142,11 +142,11 @@ shape only.
 
 | State | Icon |
 |---|---|
-| Exact match | `#44BB99` filled mint circle (`green-*.png`) |
-| Host-only / related match | `#AAAA00` filled olive circle (`host-*.png`) |
-| Not connected | `#EE7733` filled orange circle (`yellow-*.png`) |
-| No match | `#BBBBBB` hollow gray ring (`notfound-*.png`) |
-| Searching | small `#BBBBBB` gray square (`default-*.png`) |
+| Exact match | `#44BB99` mint anchor (`green-*.png`) |
+| Host-only / related match | `#AAAA00` olive anchor (`host-*.png`) |
+| Not connected | `#EE7733` orange anchor (`yellow-*.png`) |
+| No match | `#BBBBBB` thin gray anchor (`notfound-*.png`) |
+| Searching | small `#BBBBBB` gray anchor (`default-*.png`) |
 
 A literal digit `1`-`9` (or `10+`) is baked into the bottom-right via
 OffscreenCanvas — Firefox places the badge top-right and won't move it.
