@@ -1,0 +1,159 @@
+---
+metadata:
+  status: accepted
+  date: 2026-04-27
+  decision-makers: [AnchorHub maintainers]
+  consulted: []
+  informed: []
+
+title: Authoring typed pages in OneNote via a pre-built template
+
+context-and-problem-statement: |
+  AnchorHub recognises typed pages (citation, person, software)
+  marked by a 2-column metadata table whose first column carries
+  canonical labels (citationkey/identifier, orcid/linkedin, homepage).
+  Once such pages exist, the hub parses them and uses the typed values
+  for identifier-based lookup and validation reporting. The open
+  question is how the user authors these pages inside OneNote: by hand
+  against a template, via a OneMore Plugin script that pops a form, or
+  via a custom C# command added to the OneMore source tree.
+
+  Scope: only the authoring side (creating and editing typed pages).
+  Parsing and lookup remain in the hub regardless of authoring path.
+
+decision-drivers:
+- Cross-tool portability — if the user later migrates to Obsidian or Capacities, OneNote authoring code is discarded; minimise sunk cost.
+- Maintenance burden — solo developer; tooling that requires tracking an upstream fork is a recurring tax.
+- Authoring frequency — typed pages are seeded occasionally rather than created daily; rich integration (ribbon button, hotkey, Command Palette) does not pay back proportionally.
+- Validation surface — the hub already produces validation errors via req~citation-page.validation-reporting~1; in-form validation would duplicate logic.
+- Schema-evolution cost — when label sets change, existing pages need updating; manual update is acceptable if cheap, automatic update is not free either.
+
+considered-options:
+- &template Pre-built OneNote template
+- &plugin   OneMore Plugin script (PowerShell + WinForms)
+- &command  Custom OneMore Command (C# in a private OneMore fork)
+
+pros-and-cons-of-the-options:
+
+  template:
+    description: |
+      A *.one template per page type lives in OneMore's Templates/
+      folder. User picks "Insert Template" from OneMore's menu;
+      OneNote inserts a fresh page with the metadata table laid out
+      and placeholder cells the user fills in place. No script, no
+      build, no fork.
+
+    pros:
+    - &simplest     Zero code, zero compile, zero install — three .one files dropped into Templates/.
+    - &portable     What's authored is a plain OneNote page; portable to any tool that ingests .one files. No editor code to throw away on migration.
+    - &single-truth Validation lives only in the hub. No in-form validator to keep in sync with the schema.
+    - &familiar     User already edits OneNote tables by hand; no new UX to learn.
+
+    neutral:
+    - The template defines the initial layout; subsequent schema changes do not propagate to existing pages automatically.
+
+    cons:
+    - &no-validation No validation at authoring time — typos and missing rows surface only later via hub diagnostics.
+    - &manual-migrate When the schema changes (add a row, rename a label), already-authored pages must be updated by hand. User has explicitly accepted this cost.
+    - &no-form No structured form — fields are typed as free text into OneNote table cells.
+
+  plugin:
+    description: |
+      A standalone PowerShell script registered as an OneMore Plugin
+      favourite. OneMore exports the current page XML to a temp file,
+      runs the script (which pops a WinForms dialog), and re-imports
+      whatever the script writes back. Separate process, 20-second
+      timeout.
+
+    pros:
+    - Structured form with per-type fields and inline validation feedback at authoring time.
+    - No fork of OneMore — script is dropped on disk and registered via the OneMore UI.
+    - Same script handles create-new and edit-existing by branching on PLUGIN_CREATE.
+
+    neutral:
+    - Triggered from File → Plugins (or saved favourites), not from a top-level ribbon button — one extra click vs. a Command.
+
+    cons:
+    - WinForms-from-PowerShell is workable but visually inferior to OneMore's native dialog framework.
+    - No Command Palette / hotkey integration; OneMore's command framework is bypassed.
+    - Form-side validation duplicates the hub's parser logic — two places to keep in sync on every schema change.
+
+  command:
+    description: |
+      A *Command : Command C# class added under OneMore's
+      Commands/<Domain>/ folder, with a proxy method in
+      AddInCommands.cs and a ribbon button in Ribbon.xml. Inherits
+      OneMore's ILogger, IRibbonUI, OneNote wrapper, and dialog
+      scaffolding; auto-registers in the Command Palette, MRU/Replay,
+      and accepts a hotkey via [CommandAttribute].
+
+    pros:
+    - Best UX integration: ribbon button, hotkey, Command Palette, context menu — all from the existing framework.
+    - Reuses OneMore's WinForms dialog framework — visually consistent with the rest of the add-in.
+    - Edit round-trip is built into the Command lifecycle.
+
+    cons:
+    - Requires a private fork of OneMore — project-specific commands are unlikely to be accepted upstream.
+    - Every OneMore release requires rebasing the fork.
+    - Build pipeline is non-trivial — x86 by default, COM registration, attached-process debugging per OneMore's Debugging OneMore.htm.
+    - Significant up-front effort (days, not hours) before the first form appears.
+
+decision-outcome:
+
+  chosen-option:
+    link: *template
+    justification: |
+      Authoring frequency is low (typed pages are seeded on first
+      encounter, not daily), and the user has explicitly accepted
+      manual schema migrations as the cost. The template path delivers
+      the required authoring with no recurring maintenance, no fork to
+      track, and no duplicated validation logic. The richer Plugin and
+      Command paths are not ruled out forever — either can layer on
+      top of a deployed template without invalidating any hub-side
+      work — but neither is justified up front given current usage
+      frequency.
+
+  consequences:
+    positive:
+    - *simplest
+    - *portable
+    - *single-truth
+    - *familiar
+    - Hub work (parser, identifier-lookup wiring, lint-citation-pages CLI) is unblocked and can land independently of any authoring tool.
+    neutral:
+    - Three small .one files become artefacts in the repo (one per page type) and must be re-saved into OneMore's Templates/ folder on each fresh machine.
+    negative:
+    - *no-validation
+    - *manual-migrate
+    - *no-form
+
+  confirmation: |
+    Implementation lands when three .one templates are checked into
+    the repo (under templates/onenote/) and the README documents the
+    one-time copy into OneMore's Templates folder. The hub's planned
+    lint-citation-pages CLI confirms the validation half: any
+    typed-page authored from a template is parseable, and any
+    schema-drift error is surfaced as a hub diagnostic. Re-evaluate
+    this decision if (a) typed-page authoring becomes a daily
+    activity, or (b) the manual schema-migration cost becomes annoying
+    enough to justify a Plugin script.
+
+more-information: |
+  - Schema requirements:
+      feat~citation-page-metadata~1,
+      feat~person-page-metadata~1,
+      feat~software-page-metadata~1
+    in docs/requirements/anchorhub.md.
+
+  - Replaces feat~page-editor~1 in docs/requirements/anchorhub.md
+    with feat~page-templates~1.
+
+  - OneMore developer docs reviewed for this decision:
+    docs/developers/How to Add A New Command.htm and
+    docs/developers/Design - Command Framework.htm in the cloned
+    OneMore repo (C:\git-repositories\OneMore).
+
+  - Format note: this ADR uses the YADR YAML format
+    (https://github.com/adr/yadr); ADRs 0000–0004 in this directory
+    use MADR Markdown. Format chosen per request to evaluate YADR for
+    machine-readable ADRs alongside the existing MADR set.

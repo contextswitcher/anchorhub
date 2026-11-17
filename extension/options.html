@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AnchorHub — Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <h1>AnchorHub — Settings</h1>
+
+  <section class="adapters">
+    <h2>Adapters</h2>
+    <p class="hint">
+      Enable an adapter to let AnchorHub talk to it. While enabled,
+      the corresponding section in the popup, badges, and in-page
+      markers are shown.
+    </p>
+
+    <label class="row">
+      <input type="checkbox" id="adapter-jabref">
+      <span class="label-text">
+        <strong>JabRef</strong>
+        <span class="sub">Enable DOI and URL lookups via <code>http://localhost:23119</code>. A &ldquo;J&rdquo; badge appears on tabs that match an entry in your libraries while enabled.</span>
+      </span>
+    </label>
+
+    <label class="row">
+      <input type="checkbox" id="adapter-onenote">
+      <span class="label-text">
+        <strong>OneNote</strong>
+        <span class="sub">Enable URL and name lookups via the native daemon (<code>ankd</code>). The toolbar icon reflects the OneNote match state while enabled.</span>
+      </span>
+    </label>
+
+    <label class="row">
+      <input type="checkbox" id="adapter-graph">
+      <span class="label-text">
+        <strong>OneNote (Microsoft Graph)</strong>
+        <span class="sub">Enable cloud lookups via the Microsoft Graph API. Runs in parallel with the native daemon and covers notebooks that aren&rsquo;t synced to the local OneNote install. First sign-in needs <code>ankd</code> running (one-shot loopback OAuth); after that the extension refreshes tokens silently.</span>
+      </span>
+    </label>
+
+    <label class="row">
+      <input type="checkbox" id="adapter-contextswitcher">
+      <span class="label-text">
+        <strong>ContextSwitcher</strong>
+        <span class="sub">Recognise pages that belong to a <a href="https://github.com/contextswitcher/contextswitcher">ContextSwitcher</a> task. The daemon (<code>ankd</code>) matches the current URL against the <code>browser.urls</code> of the task files in <code>~/.contextswitcher/tasks</code>; when a page is part of a task, the popup offers deep links to switch to it or reveal it in the app (<code>contextswitcher://</code>).</span>
+      </span>
+    </label>
+  </section>
+
+  <section id="graph-config" class="graph-config">
+    <h2>Microsoft Graph sign-in</h2>
+    <p class="hint">
+      AnchorHub ships with a pre-registered Microsoft application — just
+      sign in. The first sign-in prompts Microsoft to authorise read-only
+      OneNote access (<code>Notes.Read</code>) for the AnchorHub app
+      against your account.
+    </p>
+
+    <div class="auth-row">
+      <button id="btn-graph-signin" type="button">Sign in with Microsoft</button>
+      <button id="btn-graph-signout" type="button" hidden>Sign out</button>
+      <span id="graph-account" class="account"></span>
+    </div>
+    <p id="graph-error" class="error" hidden></p>
+
+    <details class="advanced">
+      <summary>Advanced — use your own Azure AD app</summary>
+      <p class="hint">
+        Override the built-in client ID with one from a tenant you control.
+        Setup steps live in <code>docs/graph-setup.md</code>. Leave the
+        fields empty to use the built-in app.
+      </p>
+
+      <div class="config-row">
+        <label for="graph-client-id">Application (client) ID</label>
+        <input type="text" id="graph-client-id"
+               placeholder=""
+               autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="config-row">
+        <label for="graph-tenant">Tenant</label>
+        <input type="text" id="graph-tenant"
+               placeholder="common"
+               autocomplete="off" spellcheck="false">
+        <p class="hint">Use <code>common</code> for multi-tenant + personal accounts, or a tenant GUID for single-tenant apps.</p>
+      </div>
+
+      <div class="config-row">
+        <label>Redirect URI to register in your Azure app</label>
+        <p class="hint">
+          Register <code>http://localhost</code> under <em>Authentication</em>
+          &rarr; <em>Mobile and desktop applications</em>. AnchorHub's daemon
+          picks a fresh loopback port on each sign-in — Azure accepts any
+          port and any path under that host (RFC 8252).
+        </p>
+      </div>
+    </details>
+  </section>
+
+  <p id="status" class="status" hidden>Saved.</p>
+
+  <script src="graph/auth.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "io.github.contextswitcher.anchorhub",
+  "description": "AnchorHub host",
+  "path": "HOST_EXE_PATH",
+  "type": "stdio",
+  "allowed_extensions": ["anchorhub@contextswitcher.github.io"],
+  "allowed_origins": ["chrome-extension://bhnaeoglhfolnnkciokfdinoghhjlfeh/"]
+}

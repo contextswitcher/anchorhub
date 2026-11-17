@@ -1,0 +1,69 @@
+{
+  "manifest_version": 3,
+  "name": "AnchorHub",
+  "version": "0.1.0",
+  "description": "AnchorHub creates stable links between browser pages and items in your applications. The icon shows when the current page is anchored in a connected adapter (currently OneNote; JabRef in progress).",
+  "permissions": ["tabs", "storage", "nativeMessaging", "scripting", "contextMenus", "clipboardWrite", "downloads"],
+  "host_permissions": [
+    "<all_urls>",
+    "http://localhost:23119/*",
+    "https://login.microsoftonline.com/*",
+    "https://graph.microsoft.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "vendor/jabref-browser-extension/sources/*.js",
+        "vendor/jabref-browser-extension/sources/vendor/*.js",
+        "vendor/jabref-browser-extension/translators/zotero/*.js",
+        "vendor/jabref-browser-extension/translators/*.json"
+      ],
+      "matches": ["<all_urls>"]
+    },
+    {
+      "resources": ["popup.html", "popup.css", "popup.js", "icons/*.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content/overlay.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "scripts": ["graph/auth.js", "fulltext.js", "background.js"],
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/notfound-16.png",
+      "32": "icons/notfound-32.png",
+      "48": "icons/notfound-48.png"
+    },
+    "default_title": "AnchorHub",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/default-16.png",
+    "32": "icons/default-32.png",
+    "48": "icons/default-48.png"
+  },
+  "commands": {
+    "send-selection-to-onenote": {
+      "suggested_key": { "default": "Ctrl+Alt+O" },
+      "description": "Append the selected text and current URL to the active OneNote page"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "anchorhub@contextswitcher.github.io",
+      "strict_min_version": "121.0"
+    }
+  }
+}

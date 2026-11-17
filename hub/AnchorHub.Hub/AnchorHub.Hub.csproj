@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net8.0-windows</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ankd</AssemblyName>
+    <!-- Single-file publish: extract native libs at startup -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AnchorHub.Core\AnchorHub.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Windows-only sources: OneNote COM bridge and the WSI-search CLI.
+       NativeMessagingHost stays in every build — on non-Windows it runs
+       with a null backend (OneNote actions return DISCONNECTED) and serves
+       the JabRef fulltext realm + Graph sign-in. It gates its single
+       OneNoteClient reference behind #if WINDOWS. -->
+  <ItemGroup Condition="'$(TargetFramework)' != 'net8.0-windows'">
+    <Compile Remove="NativeMessaging\OneNoteClient.cs" />
+    <Compile Remove="Cli\Commands.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AnchorHub.Hub.Tests" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <PackageReference Include="System.Data.OleDb" Version="10.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Microsoft Graph adapter: MSAL handles the entire interactive
+         loopback OAuth flow + DPAPI token cache on Windows. The plain
+         net8.0 build pulls the same package so a future Linux daemon
+         shares the helper unchanged. -->
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.66.0" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.66.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ContextSwitcher adapter: parses the YAML frontmatter of task files
+         (~/.contextswitcher/tasks) to match browser URLs against a task's
+         browser.urls. YamlDotNet mirrors the SnakeYAML output ContextSwitcher
+         itself writes. -->
+    <PackageReference Include="YamlDotNet" Version="16.2.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+# Build output
+**/bin/
+**/obj/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# NuGet
+*.nupkg
+packages/
+
+# Logs
+*.log
+
+# Chrome extension signing key — only needed for Web Store packaging.
+# The public key is committed in extension/manifest.json so the
+# extension ID stays stable across machines.
+install/chrome-private-key.pem

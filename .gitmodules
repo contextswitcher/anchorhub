@@ -1,0 +1,3 @@
+[submodule "extension/vendor/jabref-browser-extension"]
+	path = extension/vendor/jabref-browser-extension
+	url = https://github.com/JabRef/JabRef-Browser-Extension-fresh.git

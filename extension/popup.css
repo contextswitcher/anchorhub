@@ -1,0 +1,333 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  min-width: 320px;
+  max-width: 400px;
+  color: #1a1a1a;
+}
+
+#content { padding: 10px 12px; }
+
+.loading { color: #888; padding: 8px 0; }
+
+.no-match { color: #555; padding: 6px 0; }
+
+/* ── Per-section find-status cue ──
+   Green left accent + tint when the section has a result; muted gray
+   when the lookup completed with nothing. Mirrors the in-page marker
+   colours (green = match, gray = no match). */
+#content,
+#contextswitcher-section,
+#jabref-section,
+#bibtex-section { border-left: 3px solid transparent; }
+
+.section-found { border-left-color: #44BB99 !important; background: #f3fbf8; }
+.section-empty { border-left-color: #c9c9c9 !important; background: #fafafa; }
+
+.status-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+.chip-found { background: #44BB99; color: #fff; }
+.chip-empty { background: #ddd;    color: #666; }
+
+/* ── Match list ── */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #666;
+  margin: 8px 0 4px;
+}
+
+.match-row {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-bottom: 3px;
+}
+.match-row:hover { background: #f0f4ff; border-color: #c0cfff; }
+
+.match-title { font-weight: 500; }
+.match-meta  { font-size: 11px; color: #666; margin-top: 2px; }
+
+.match-row.host-only { opacity: 0.8; }
+.match-row.from-graph { background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%); }
+.match-row.from-graph:hover { background: #eaf2ff; }
+
+.cloud-badge {
+  display: inline-block;
+  margin-right: 4px;
+  color: #4a86d8;
+  font-size: 11px;
+}
+
+.more-row {
+  padding: 5px 8px;
+  color: #666;
+  font-size: 12px;
+  font-style: italic;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.more-row:hover { color: #222; background: #f0f4ff; text-decoration: underline; }
+
+/* ── Add UI ── */
+.add-ui {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.add-ui select {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 3px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  color: #1a1a1a;
+}
+
+#btn-add {
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  border: 1px solid #4a86d8;
+  border-radius: 3px;
+  background: #e8f0fe;
+  white-space: nowrap;
+}
+#btn-add:hover:not(:disabled) { background: #d2e3fc; }
+#btn-add:disabled { opacity: 0.5; cursor: default; }
+
+.add-success { font-size: 12px; color: #1a7f37; font-weight: 500; }
+.add-error   { font-size: 11px; color: #c0392b; margin-top: 3px; }
+
+/* ── BibTeX section ── */
+#bibtex-section {
+  padding: 6px 12px 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.bibtex-header { margin-top: 4px; }
+
+.bibtex-source {
+  margin: 4px 0 6px;
+  padding: 6px 8px;
+  background: #fafafa;
+  border: 1px solid #ececec;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.section-sublabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin: 6px 0 3px;
+}
+
+/* ── ContextSwitcher section ── */
+#contextswitcher-section {
+  padding: 6px 12px 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.contextswitcher-header { margin-top: 4px; }
+
+.cs-task-row {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.cs-task-title { font-weight: 600; }
+.cs-task-meta {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cs-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  white-space: nowrap;
+}
+.cs-btn:hover { background: #f0f0f0; }
+
+.cs-btn-switch {
+  border-color: #44BB99;
+  background: #eafaf4;
+  font-weight: 600;
+}
+.cs-btn-switch:hover { background: #d6f5ea; }
+
+/* ── JabRef section ── */
+#jabref-section {
+  padding: 6px 12px 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.jabref-header { margin-top: 4px; }
+
+.jabref-offline {
+  font-size: 11px;
+  color: #aaa;
+  margin: 2px 0 4px;
+  font-style: italic;
+}
+
+.jabref-doi {
+  font-size: 11px;
+  color: #888;
+  font-family: monospace;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jabref-row {
+  padding: 5px 8px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+.jabref-confirmed   { background: #d4f7cf; border-color: #a2f49b; color: #1a4d18; }
+.jabref-unconfirmed { background: #f0f0f0; border-color: #ddd;    color: #555; }
+
+.jabref-add-ui {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.jabref-lib-select {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 3px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.jabref-btn-add {
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  white-space: nowrap;
+}
+.jabref-btn-add:hover:not(:disabled) { background: #f0f0f0; }
+.jabref-btn-add:disabled { opacity: 0.5; cursor: default; }
+
+.jabref-queued { font-size: 12px; color: #2e7d32; font-weight: 500; }
+.jabref-error  { font-size: 11px; color: #c0392b; margin-top: 3px; }
+
+/* ── @misc form (Phase 2) ── */
+.jabref-misc-form { margin-top: 4px; }
+
+.jabref-form-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.jabref-form-row label {
+  font-size: 11px;
+  color: #666;
+  width: 34px;
+  flex-shrink: 0;
+}
+
+.jabref-input {
+  flex: 1;
+  font-size: 12px;
+  padding: 2px 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  min-width: 0;
+}
+.jabref-input-readonly { background: #f5f5f5; color: #888; }
+.jabref-input-year     { flex: 0 0 48px; }
+
+/* ── Footer ── */
+footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  font-size: 11px;
+  color: #888;
+}
+
+.footer-spacer { flex: 1; }
+
+#btn-copy,
+#btn-refresh,
+#btn-settings {
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+}
+#btn-copy:hover:not(:disabled),
+#btn-refresh:hover:not(:disabled),
+#btn-settings:hover { background: #f0f0f0; }
+#btn-refresh:disabled,
+#btn-copy:disabled { opacity: 0.5; cursor: default; }
+
+#btn-settings { line-height: 1; }
+
+.no-match a { color: #4a86d8; text-decoration: none; }
+.no-match a:hover { text-decoration: underline; }
