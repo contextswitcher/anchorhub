@@ -165,8 +165,24 @@ After completing each logical step (feature, fix, refactor, or docs
 update), create a git commit. Do not batch multiple unrelated changes
 into one commit.
 
-Push after each commit. If the remote has advanced, **merge, never
-rebase** (`git pull --no-rebase`), then push.
+Push after each commit to `experimental`, never to `main`. If the
+remote has advanced, **merge, never rebase** (`git pull --no-rebase`),
+then push. No pull requests, except those Dependabot opens against
+`experimental`.
+
+## Releases
+
+Same cycle as koppter and ContextSwitcher
+([ADR 0009](docs/decisions/0009-calver-changelog-daily-release.md)):
+the daily workflow (`.github/workflows/release.yml`) merges
+`experimental` into `main`, turns `## [Unreleased]` of `CHANGELOG.md`
+into the previous day's CalVer release `v<YYYY-MM-DD>`, tags it and
+publishes the GitHub release with the `ankd` binaries. Sessions do not
+merge into `main` or tag by hand.
+
+`CHANGELOG.md` follows Keep a Changelog. Every user-visible change adds
+a bullet under `## [Unreleased]` in the same commit; released sections
+are never edited. Check: `jbang heylogs@nbbrd check CHANGELOG.md`.
 
 ## Starting / installing the app
 

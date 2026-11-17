@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+    branches: [main, experimental]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch supersedes the running build.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 8.0.x
+
+      # Both target frameworks, so that the Windows-only sources compile too.
+      - name: Build and test
+        working-directory: hub
+        run: dotnet test -p:EnableWindowsTargeting=true
+
+  changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: jbangdev/setup-jbang@2b1b465a7b75f4222b81426f23a01e013aa7b95c # v0.1.1
+
+      - name: Check the changelog format
+        run: |
+          jbang trust add https://github.com/nbbrd/
+          jbang heylogs@nbbrd check --format=github-actions CHANGELOG.md
+
+  workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Lint the workflows
+        run: |
+          bash <(curl -sSf https://raw.githubusercontent.com/rhysd/actionlint/914e7df21a07ef503a81201c76d2b11c789d3fca/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color

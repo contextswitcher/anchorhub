@@ -1,0 +1,103 @@
+name: Daily release
+
+# Every morning: merge experimental into main and, when CHANGELOG.md has an
+# [Unreleased] section, turn it into the CalVer release of the previous day,
+# the day the changes were made. Each release tag gets a release on GitHub with
+# its section of the changelog and the self-contained ankd binaries.
+# Same cycle as koppter and ContextSwitcher (decision 0009).
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: daily-release
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: experimental
+          fetch-depth: 0
+
+      - uses: jbangdev/setup-jbang@2b1b465a7b75f4222b81426f23a01e013aa7b95c # v0.1.1
+
+      - name: Release, merge, tag
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          repo="https://github.com/$GITHUB_REPOSITORY"
+          d=$(date -u -d yesterday +%F)
+
+          if [ -z "$(git rev-list origin/main..HEAD)" ] && ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
+            echo "nothing to merge or release"; exit 0
+          fi
+
+          tag=
+          if grep -q '^## \[Unreleased\]' CHANGELOG.md && ! git rev-parse -q --verify "refs/tags/v$d" >/dev/null; then
+            previous=$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n 1)
+            if [ -n "$previous" ]; then
+              link="$repo/compare/$previous...v$d"
+            else
+              link="$repo/releases/tag/v$d"
+            fi
+            sed -i -e "s/^## \[Unreleased\]\$/## [$d] - $d/" \
+                   -e "s|^\[Unreleased\]: .*\$|[$d]: $link|" CHANGELOG.md
+            jbang trust add https://github.com/nbbrd/
+            jbang heylogs@nbbrd check CHANGELOG.md
+            git commit -am "Release $d"
+            git push origin HEAD:experimental
+            tag="v$d"
+          fi
+
+          git switch main
+          git merge --no-ff --no-edit -m "Merge experimental${tag:+: release $d}" experimental
+          git push origin main
+          if [ -n "$tag" ]; then
+            git tag "$tag" main
+            git push origin "$tag"
+          fi
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 8.0.x
+
+      # Every release tag that has no binaries yet, not only the tag of this run,
+      # so that the next run makes up for a run that failed.
+      - name: Publish the releases with the ankd binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          jbang trust add https://github.com/nbbrd/
+          for tag in $(git tag --list 'v[0-9]*' --sort=version:refname); do
+            d=${tag#v}
+            if gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null | grep -q '^ankd-'; then
+              continue
+            fi
+            git checkout --quiet "$tag"
+            out="$RUNNER_TEMP/assets-$d"
+            mkdir -p "$out"
+            # The Windows build carries the COM bridges; Linux and macOS get the forwarder build.
+            for target in win-x64:net8.0-windows linux-x64:net8.0 osx-arm64:net8.0; do
+              rid=${target%%:*}
+              dotnet publish hub/AnchorHub.Hub/AnchorHub.Hub.csproj -c Release -r "$rid" -f "${target#*:}" \
+                --self-contained true -p:PublishSingleFile=true -p:EnableWindowsTargeting=true \
+                -o "$RUNNER_TEMP/publish-$d-$rid" --nologo
+              ext=
+              if [ "$rid" = win-x64 ]; then ext=.exe; fi
+              cp "$RUNNER_TEMP/publish-$d-$rid/ankd$ext" "$out/ankd-$d-$rid$ext"
+            done
+            if ! gh release view "$tag" >/dev/null 2>&1; then
+              jbang heylogs@nbbrd extract --ref "$d" --output "$RUNNER_TEMP/notes.md" CHANGELOG.md
+              gh release create "$tag" --verify-tag --title "$d" --notes-file "$RUNNER_TEMP/notes.md"
+            fi
+            gh release upload "$tag" "$out"/* --clobber
+          done
