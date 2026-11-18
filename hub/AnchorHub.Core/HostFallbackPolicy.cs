@@ -29,7 +29,6 @@ public static class HostFallbackPolicy
         "community.chocolatey.org",
         "addons.mozilla.org",
         "gist.github.com",
-        "medium.com",
         // doi.org — every saved paper carries a DOI link; host-only matches all of them.
         "doi.org",
         // mdpi.com — every saved MDPI paper. Identity is in /<journal>/<vol>/<issue>/<id>.
@@ -47,6 +46,12 @@ public static class HostFallbackPolicy
         "idealo.es",
         "idealo.co.uk",
     };
+
+    // Blog hosters — one blog per <name>.<hoster> subdomain (and posts on
+    // the apex). The hoster token is shared across all their blogs, as with
+    // github.io, so host-only matches every saved blog there.
+    private static readonly string[] BlogHosters =
+        ["blogspot.com", "wordpress.com", "medium.com", "substack.com"];
 
     // Academic indexes — host alone matches every paper/author the user ever saved.
     private static readonly HashSet<string> AcademicSites = new(StringComparer.OrdinalIgnoreCase)
@@ -209,15 +214,11 @@ public static class HostFallbackPolicy
             return true;
 
         // Blogs (blog.jetbrains.com, blogs.oracle.com) — the host matches every
-        // saved post of that blog, not the one being read. Blog hosters
-        // (<name>.blogspot.com, <name>.wordpress.com) additionally share the
-        // hoster token across all their blogs, as with github.io.
+        // saved post of that blog, not the one being read.
         if (host.StartsWith("blog.", StringComparison.OrdinalIgnoreCase) ||
             host.StartsWith("blogs.", StringComparison.OrdinalIgnoreCase) ||
-            host.Equals("blogspot.com", StringComparison.OrdinalIgnoreCase) ||
-            host.EndsWith(".blogspot.com", StringComparison.OrdinalIgnoreCase) ||
-            host.Equals("wordpress.com", StringComparison.OrdinalIgnoreCase) ||
-            host.EndsWith(".wordpress.com", StringComparison.OrdinalIgnoreCase))
+            BlogHosters.Any(h => host.Equals(h, StringComparison.OrdinalIgnoreCase) ||
+                                 host.EndsWith("." + h, StringComparison.OrdinalIgnoreCase)))
             return true;
 
         return NewsSites.Contains(host)

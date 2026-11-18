@@ -44,6 +44,10 @@ public class HostFallbackPolicyTests
     [InlineData("https://someone.blogspot.com/2026/01/post.html", true)]
     [InlineData("https://someone.wordpress.com/2026/01/02/post/", true)]
     [InlineData("https://wordpress.com/", true)]
+    [InlineData("https://medium.com/@someone/post-123", true)]
+    [InlineData("https://someone.medium.com/post-123", true)]
+    [InlineData("https://someone.substack.com/p/post", true)]
+    [InlineData("https://substack.com/@someone", true)]
     [InlineData("https://myblog.example.org/post", false)]
     [InlineData("https://notwordpress.com/post", false)]
     public void ShouldSkipHostFallback_Blogs(string raw, bool expected)
