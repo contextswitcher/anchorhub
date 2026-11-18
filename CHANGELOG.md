@@ -11,5 +11,10 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - Outlook adapter for classic desktop Outlook: `ankd outlook-capture` prints the selected or open item with an `anchor://outlook/message/…` link, and `ankd outlook-open <link>` opens that item again.
 - Daily releases: each release on GitHub carries its section of this changelog and the `ankd` daemon for Windows, Linux and macOS.
+- `just run-loop` (alias `just loop`), as in ContextSwitcher: keeps the installed `ankd` at the newest commit by pulling, installing and waiting for the next commit.
+
+### Fixed
+
+- Reinstalling on Windows while the browser has `ankd` running no longer fails on the locked file: the installer stops it, and the extension reconnects to the new one.
 
 [Unreleased]: https://github.com/contextswitcher/anchorhub/commits/experimental

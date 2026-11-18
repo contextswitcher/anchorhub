@@ -247,5 +247,6 @@ Do this in the same commit as the code change.
 | Regenerate icons (new colour) | `powershell -ExecutionPolicy Bypass -File extension\icons\generate-icons.ps1` |
 | Add a new native action | PS script in `OneNoteClient.cs` → `OneNoteClient` method → `MessageHandler` case |
 | Capture / open an Outlook mail | `dotnet run --project hub/AnchorHub.Hub -- outlook-capture`, then `-- outlook-open "<anchor>"` |
+| Keep the installed daemon current | `just run-loop` (or `just loop`; `just run-loop install-chrome` for Chromium) — pull, install, wait for new commits |
 | Change cache TTL | `CACHE_TTL_MS` constant in `extension/background.js` |
 | View daemon logs | `%APPDATA%\AnchorHub\logs\host-YYYYMMDD.log` |

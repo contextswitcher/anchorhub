@@ -28,6 +28,10 @@ if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 Write-Host "Installing hub to $InstDir..."
 New-Item -ItemType Directory -Force -Path $InstDir | Out-Null
 $src = Join-Path $PSScriptRoot "bin\$ExeName"
+# A running ankd locks the exe; the extension reconnects and starts the new one.
+Get-Process -Name ankd -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -eq "$InstDir\$ExeName" } | Stop-Process -Force
+Start-Sleep -Milliseconds 500
 Copy-Item $src "$InstDir\$ExeName" -Force
 
 # 4. Write native messaging manifest. Firefox-flavoured: only
