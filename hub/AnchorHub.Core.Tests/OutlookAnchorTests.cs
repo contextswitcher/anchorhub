@@ -3,6 +3,9 @@ using Xunit;
 
 namespace AnchorHub.Core.Tests;
 
+// [utest->req~ank.outlook.capture~1]
+// [utest->req~ank.outlook.open~1]
+// [utest->req~ank.outlook.complete~1]
 public class OutlookAnchorTests
 {
     [Fact]
@@ -24,6 +27,14 @@ public class OutlookAnchorTests
     {
         Assert.Equal(new OutlookAnchor("AB12", null, null),
             OutlookAnchor.TryParse("anchor://outlook/message/AB12"));
+    }
+
+    // koppter stores links without x-store; open and complete then search all stores.
+    [Fact]
+    public void TryParse_TitleWithoutStore()
+    {
+        Assert.Equal(new OutlookAnchor("AB12", null, "Hi there"),
+            OutlookAnchor.TryParse("anchor://outlook/message/AB12?title=Hi%20there&v=1"));
     }
 
     [Theory]

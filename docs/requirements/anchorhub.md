@@ -2207,7 +2207,53 @@ Needs: impl, utest
 `ankd outlook-open <anchor>` opens the item an
 `anchor://outlook/message/…` URI names in its own Outlook window, starting
 Outlook when it is not running. The item is resolved by EntryID within the
-store named by `x-store`, or across all stores when `x-store` is absent.
+store named by `x-store`, or across all stores when `x-store` is absent:
+first the default store, then each store of the session in turn until one
+resolves the EntryID. koppter stores anchors without `x-store` to keep its
+lines short.
+
+Needs: impl, utest
+
+### List the open Outlook To-Do items
+`req~ank.outlook.todos~1`
+
+`ankd outlook-todos` prints exactly one line to stdout: a JSON array of the
+open items of the To-Do List of every store of the session (default folder
+`olFolderToDo`). Stores without that folder (for example public folders)
+are skipped. Completed items — a flag with status complete, or a completed
+Outlook task — are left out. Each element carries, in this order:
+
+| Field | Value |
+|---|---|
+| `entryId` | EntryID (hex) |
+| `storeId` | StoreID of the store (hex) |
+| `store` | display name of the store |
+| `kind` | `mail` (flagged mail), `task` (Outlook task) or `other` (any other flagged item) |
+| `subject` | subject |
+| `due` | `yyyy-MM-dd` or `null`: `TaskDueDate` of a flagged item, `DueDate` of a task |
+| `start` | `yyyy-MM-dd` or `null`: `TaskStartDate` of a flagged item, `StartDate` of a task |
+| `received` | ISO 8601 receive time or `null` (always `null` for tasks) |
+| `sender` | sender name or `null` (always `null` for tasks) |
+| `anchor` | `anchor://outlook/message/<EntryID>?x-store=<StoreID>&title=<subject>&v=1` |
+
+Outlook's value for "no date", 4501-01-01, becomes `null`. The command reads
+only and does not start Outlook: when Outlook is not running, it exits
+non-zero with the reason on stderr. All stores are read in one PowerShell
+call.
+
+Needs: impl, utest
+
+### Complete an Outlook To-Do item
+`req~ank.outlook.complete~1`
+
+`ankd outlook-complete <anchor>` marks the item an
+`anchor://outlook/message/…` URI names as done in Outlook and saves it: an
+Outlook task is marked complete, a flagged mail or other flagged item gets
+its flag status set to complete. The item is resolved as for
+`outlook-open`, including the search across all stores without `x-store`.
+The command exits 0 on success; when Outlook is not running, the item
+cannot be found, or it is neither a task nor flagged, it exits non-zero with
+the reason on stderr.
 
 Needs: impl, utest
 

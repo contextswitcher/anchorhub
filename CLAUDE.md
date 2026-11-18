@@ -247,5 +247,7 @@ Do this in the same commit as the code change.
 | Regenerate icons (new colour) | `powershell -ExecutionPolicy Bypass -File extension\icons\generate-icons.ps1` |
 | Add a new native action | PS script in `OneNoteClient.cs` → `OneNoteClient` method → `MessageHandler` case |
 | Capture / open an Outlook mail | `dotnet run --project hub/AnchorHub.Hub -- outlook-capture`, then `-- outlook-open "<anchor>"` |
+| List open Outlook To-Do items (JSON, all stores) | `dotnet run --project hub/AnchorHub.Hub -- outlook-todos` |
+| Mark an Outlook To-Do item done | `dotnet run --project hub/AnchorHub.Hub -- outlook-complete "<anchor>"` (changes the item) |
 | Change cache TTL | `CACHE_TTL_MS` constant in `extension/background.js` |
 | View daemon logs | `%APPDATA%\AnchorHub\logs\host-YYYYMMDD.log` |

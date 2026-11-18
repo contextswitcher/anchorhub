@@ -166,7 +166,7 @@ if (listenArg is not null)
 // outlook-* ones Outlook) over COM,
 // so they are Windows-only too. Anything else (no args, flags only, or an
 // unknown first token) falls through to the native-messaging host below.
-var knownCmds = new HashSet<string> { "lookup", "lookup-name", "search-wsi", "outlook-capture", "outlook-open" };
+var knownCmds = new HashSet<string> { "lookup", "lookup-name", "search-wsi", "outlook-capture", "outlook-open", "outlook-todos", "outlook-complete" };
 if (args.Length > 0 &&
     !args[0].StartsWith("--", StringComparison.Ordinal) &&
     knownCmds.Contains(args[0]))
@@ -188,6 +188,10 @@ if (args.Length > 0 &&
             "outlook-open" => args.Length < 2
                                 ? Commands.Unknown("outlook-open (missing anchor URI)")
                                 : Commands.OutlookOpen(args[1]),
+            "outlook-todos" => Commands.OutlookTodos(),
+            "outlook-complete" => args.Length < 2
+                                ? Commands.Unknown("outlook-complete (missing anchor URI)")
+                                : Commands.OutlookComplete(args[1]),
             _             => Commands.Unknown(args[0]),
         };
     }

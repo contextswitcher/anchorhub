@@ -262,7 +262,21 @@ internal static class Commands
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public static int OutlookOpen(string uri)
+    public static int OutlookOpen(string uri) => WithAnchor(uri, Outlook.OutlookClient.Open);
+
+    // One JSON line with the open To-Do List items of all stores; koppter
+    // mixes them into its task list.
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookTodos()
+    {
+        Console.WriteLine(Outlook.OutlookClient.Todos().ToJsonString());
+        return 0;
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookComplete(string uri) => WithAnchor(uri, Outlook.OutlookClient.Complete);
+
+    private static int WithAnchor(string uri, Action<OutlookAnchor> action)
     {
         var anchor = OutlookAnchor.TryParse(uri);
         if (anchor is null)
@@ -270,14 +284,14 @@ internal static class Commands
             Console.Error.WriteLine("Not an anchor://outlook/message/... URI.");
             return 1;
         }
-        Outlook.OutlookClient.Open(anchor);
+        action(anchor);
         return 0;
     }
 
     public static int Unknown(string cmd)
     {
         Console.Error.WriteLine($"Unknown command: {cmd}");
-        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url>");
+        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url> | outlook-capture | outlook-open <anchor> | outlook-todos | outlook-complete <anchor>");
         return 1;
     }
 }
