@@ -51,7 +51,7 @@ public static class HostFallbackPolicy
     // the apex). The hoster token is shared across all their blogs, as with
     // github.io, so host-only matches every saved blog there.
     private static readonly string[] BlogHosters =
-        ["blogspot.com", "wordpress.com", "medium.com", "substack.com"];
+        ["blogspot.com", "wordpress.com", "medium.com", "substack.com", "ghost.io", "hashnode.dev"];
 
     // Academic indexes — host alone matches every paper/author the user ever saved.
     private static readonly HashSet<string> AcademicSites = new(StringComparer.OrdinalIgnoreCase)

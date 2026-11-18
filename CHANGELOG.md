@@ -9,7 +9,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 ### Changed
 
-- Blog pages (hosts such as `blog.jetbrains.com`, `blogs.oracle.com`, `*.blogspot.com`, `*.wordpress.com`, `*.medium.com` or `*.substack.com`) no longer list every OneNote page that mentions the blog as a "same site" match.
+- Blog pages (hosts such as `blog.jetbrains.com`, `blogs.oracle.com`, `*.blogspot.com`, `*.wordpress.com`, `*.medium.com`, `*.substack.com`, `*.ghost.io` or `*.hashnode.dev`) no longer list every OneNote page that mentions the blog as a "same site" match.
 
 [Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-17...HEAD
 

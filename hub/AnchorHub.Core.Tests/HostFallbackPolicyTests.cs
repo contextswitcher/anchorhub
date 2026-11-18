@@ -48,6 +48,8 @@ public class HostFallbackPolicyTests
     [InlineData("https://someone.medium.com/post-123", true)]
     [InlineData("https://someone.substack.com/p/post", true)]
     [InlineData("https://substack.com/@someone", true)]
+    [InlineData("https://someone.ghost.io/post/", true)]
+    [InlineData("https://someone.hashnode.dev/post", true)]
     [InlineData("https://myblog.example.org/post", false)]
     [InlineData("https://notwordpress.com/post", false)]
     public void ShouldSkipHostFallback_Blogs(string raw, bool expected)
