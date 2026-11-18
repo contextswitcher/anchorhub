@@ -249,6 +249,7 @@ Do this in the same commit as the code change.
 | Capture / open an Outlook mail | `dotnet run --project hub/AnchorHub.Hub -- outlook-capture`, then `-- outlook-open "<anchor>"` |
 | List open Outlook To-Do items (JSON, all stores) | `dotnet run --project hub/AnchorHub.Hub -- outlook-todos` |
 | Mark an Outlook To-Do item done | `dotnet run --project hub/AnchorHub.Hub -- outlook-complete "<anchor>"` (changes the item) |
+| Mirror koppter time blocks into Outlook | `dotnet run --project hub/AnchorHub.Hub -- outlook-blocks-sync < request.json` (changes the calendar; only items with category `koppter` and property `KoppterBlockId`), `-- outlook-blocks-clear --dry-run`, `-- outlook-busy --from 2026-11-16 --to 2026-11-23` |
 | Keep the installed daemon current | `just run-loop` (or `just loop`; `just run-loop install-chrome` for Chromium) — pull, install, wait for new commits |
 | Change cache TTL | `CACHE_TTL_MS` constant in `extension/background.js` |
 | View daemon logs | `%APPDATA%\AnchorHub\logs\host-YYYYMMDD.log` |

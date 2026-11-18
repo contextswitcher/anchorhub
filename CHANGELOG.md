@@ -10,6 +10,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 ### Added
 
 - `ankd outlook-todos` prints the open flagged mails and Outlook tasks of the To-Do List of all accounts as one JSON line, and `ankd outlook-complete <link>` marks such an item done.
+- `ankd outlook-blocks-sync` mirrors the time blocks that koppter plans into an Outlook calendar as tentative, private appointments (request as JSON on stdin), `ankd outlook-blocks-clear` removes them again, and `ankd outlook-busy` lists the busy times of a calendar; only items with both the `koppter` category and a `KoppterBlockId` property are ever deleted.
 
 ### Changed
 

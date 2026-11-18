@@ -12,7 +12,7 @@ adapters for individual applications.
 | OneNote adapter | working (URL-in-page matching, page creation, name search) |
 | JabRef adapter | in progress |
 | ContextSwitcher adapter | working (task-URL matching + `contextswitcher://` deep links) |
-| Outlook adapter | in progress (classic Outlook: `ankd outlook-capture` / `outlook-open <anchor>` / `outlook-todos` / `outlook-complete <anchor>` CLI) |
+| Outlook adapter | in progress (classic Outlook: `ankd outlook-capture` / `outlook-open <anchor>` / `outlook-todos` / `outlook-complete <anchor>` / `outlook-blocks-sync` / `outlook-blocks-clear` / `outlook-busy` CLI) |
 | Linux host (relay to OneNote in a Windows VM) | hub-side plumbing complete, install scripts shipped — see [`docs/plan-linux-port.md`](docs/plan-linux-port.md) |
 | macOS host (Apple Silicon, Chrome — JabRef fulltext only) | native build, no OneNote/VM; installer shipped, unexercised on hardware |
 
