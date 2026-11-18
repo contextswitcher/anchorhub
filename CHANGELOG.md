@@ -15,6 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - Blog pages (hosts such as `blog.jetbrains.com`, `blogs.oracle.com`, `*.blogspot.com`, `*.wordpress.com`, `*.medium.com`, `*.substack.com`, `*.ghost.io` or `*.hashnode.dev`) no longer list every OneNote page that mentions the blog as a "same site" match.
 - `ankd outlook-open <link>` finds the item in all accounts when the link names no store.
+- The installers say why the JabRef fulltext provider is disabled (fetching full texts moves to the JabRef browser-extension plugin) and how to build it in again.
 
 [Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-17...HEAD
 

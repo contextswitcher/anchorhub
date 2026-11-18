@@ -116,8 +116,15 @@ macOS (Apple Silicon) install done.
   Extension: $EXT_STAGE_DIR
 
 Note: OneNote anchor-lookup is Windows-only; OneNote actions return
-DISCONNECTED. The JabRef fulltext provider is currently disabled (see
-JABREF_FULLTEXT_AUTOENABLE), so the health check below will not answer.
+DISCONNECTED.
+
+The JabRef fulltext provider is disabled on purpose: fetching full texts
+for JabRef moves to the JabRef browser-extension plugin, so ankd no longer
+starts the provider by itself and the health check below will not answer.
+To use it anyway: add
+  <DefineConstants>\$(DefineConstants);JABREF_FULLTEXT_AUTOENABLE</DefineConstants>
+to a <PropertyGroup> in hub/AnchorHub.Hub/AnchorHub.Hub.csproj and run
+this installer again.
 
 To load the extension in Chrome:
   1. Open chrome://extensions
