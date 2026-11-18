@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
-## [Unreleased]
+## [2026-11-17] - 2026-11-17
 
 ### Added
 
@@ -17,4 +17,4 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - Reinstalling on Windows while the browser has `ankd` running no longer fails on the locked file: the installer stops it, and the extension reconnects to the new one.
 
-[Unreleased]: https://github.com/contextswitcher/anchorhub/commits/experimental
+[2026-11-17]: https://github.com/contextswitcher/anchorhub/releases/tag/v2026-11-17
