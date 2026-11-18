@@ -38,6 +38,18 @@ public class HostFallbackPolicyTests
     }
 
     [Theory]
+    [InlineData("https://blog.jetbrains.com/rust/2026/08/10/rewriting-in-rust/", true)]
+    [InlineData("https://blogs.oracle.com/java/post/some-post", true)]
+    [InlineData("https://www.blog.example.org/post", true)]
+    [InlineData("https://myblog.example.org/post", false)]
+    public void ShouldSkipHostFallback_Blogs(string raw, bool expected)
+    {
+        var url = UrlNormalizer.TryNormalize(raw);
+        Assert.NotNull(url);
+        Assert.Equal(expected, HostFallbackPolicy.ShouldSkipHostFallback(url!));
+    }
+
+    [Theory]
     [InlineData("https://mail.google.com/mail/u/0/#inbox")]
     [InlineData("https://mail.google.com/mail/u/0/")]
     [InlineData("https://calendar.google.com/calendar/u/0/r")]

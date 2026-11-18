@@ -525,6 +525,16 @@ extended on demand. Currently:
 
 Needs: impl
 
+### Blogs — no host-only fallback
+`req~ank.match.blog-no-fallback~1`
+
+A blog host (`blog.jetbrains.com`, `blogs.oracle.com`) matches every
+saved post of that blog, not the post being read. The host-only
+fallback (and with it the domain-core fallback) is suppressed for any
+host whose first label, after an optional `www.`, is `blog` or `blogs`.
+
+Needs: impl
+
 ### GitHub Pages — no host-only fallback
 `req~ank.match.github-pages-no-fallback~1`
 

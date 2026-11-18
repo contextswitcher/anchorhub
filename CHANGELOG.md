@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
+## [Unreleased]
+
+### Changed
+
+- Blog pages (hosts such as `blog.jetbrains.com` or `blogs.oracle.com`) no longer list every OneNote page that mentions the blog as a "same site" match.
+
+[Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-17...HEAD
+
 ## [2026-11-17] - 2026-11-17
 
 ### Added

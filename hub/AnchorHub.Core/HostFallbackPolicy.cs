@@ -208,6 +208,12 @@ public static class HostFallbackPolicy
             host.EndsWith(".github.io", StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // Blogs (blog.jetbrains.com, blogs.oracle.com) — the host matches every
+        // saved post of that blog, not the one being read.
+        if (host.StartsWith("blog.", StringComparison.OrdinalIgnoreCase) ||
+            host.StartsWith("blogs.", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         return NewsSites.Contains(host)
             || Aggregators.Contains(host)
             || SearchEngines.Contains(host)
