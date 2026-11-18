@@ -209,9 +209,15 @@ public static class HostFallbackPolicy
             return true;
 
         // Blogs (blog.jetbrains.com, blogs.oracle.com) — the host matches every
-        // saved post of that blog, not the one being read.
+        // saved post of that blog, not the one being read. Blog hosters
+        // (<name>.blogspot.com, <name>.wordpress.com) additionally share the
+        // hoster token across all their blogs, as with github.io.
         if (host.StartsWith("blog.", StringComparison.OrdinalIgnoreCase) ||
-            host.StartsWith("blogs.", StringComparison.OrdinalIgnoreCase))
+            host.StartsWith("blogs.", StringComparison.OrdinalIgnoreCase) ||
+            host.Equals("blogspot.com", StringComparison.OrdinalIgnoreCase) ||
+            host.EndsWith(".blogspot.com", StringComparison.OrdinalIgnoreCase) ||
+            host.Equals("wordpress.com", StringComparison.OrdinalIgnoreCase) ||
+            host.EndsWith(".wordpress.com", StringComparison.OrdinalIgnoreCase))
             return true;
 
         return NewsSites.Contains(host)

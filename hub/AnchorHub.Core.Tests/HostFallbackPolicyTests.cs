@@ -41,7 +41,11 @@ public class HostFallbackPolicyTests
     [InlineData("https://blog.jetbrains.com/rust/2026/08/10/rewriting-in-rust/", true)]
     [InlineData("https://blogs.oracle.com/java/post/some-post", true)]
     [InlineData("https://www.blog.example.org/post", true)]
+    [InlineData("https://someone.blogspot.com/2026/01/post.html", true)]
+    [InlineData("https://someone.wordpress.com/2026/01/02/post/", true)]
+    [InlineData("https://wordpress.com/", true)]
     [InlineData("https://myblog.example.org/post", false)]
+    [InlineData("https://notwordpress.com/post", false)]
     public void ShouldSkipHostFallback_Blogs(string raw, bool expected)
     {
         var url = UrlNormalizer.TryNormalize(raw);
