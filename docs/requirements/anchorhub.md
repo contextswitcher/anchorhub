@@ -660,7 +660,7 @@ Needs: impl
 ## Toolbar Icon
 
 ### Colour palette and shape encoding
-`req~ank.icon.colour-palette~4`
+`req~ank.icon.colour-palette~5`
 
 Icon colours are taken from Paul Tol's colour-blind-safe
 [bright and vibrant qualitative schemes](https://sronpersonalpages.nl/~pault/).
@@ -669,15 +669,15 @@ Icon colours are taken from Paul Tol's colour-blind-safe
 the kind of result.** Shape gives colour-blind users a second
 discriminator and separates "still working" from "completed".
 
-- **Filled circle** (full canvas size) — a result has come back.
+- **Solid ship's anchor** (full canvas size) — a result has come back.
   Colour says which: green = exact match, teal = host-only / related,
   orange = daemon not connected.
-- **Hollow grey ring** (full canvas size) — lookup completed, no
-  OneNote match. Same grey hue as the searching square; shape alone
-  distinguishes the lookup phase (hollow ring vs small filled square
-  vs full filled circle). Keeps link-dense pages quiet — no "red
+- **Thin-stroke grey anchor** (full canvas size) — lookup completed, no
+  OneNote match. Same grey hue as the searching anchor; stroke weight
+  and size alone distinguish the lookup phase (thin vs small solid
+  vs full solid anchor). Keeps link-dense pages quiet — no "red
   sea" of negatives when most links aren't anchored.
-- **Small grey square** (~50% of canvas, centred) — lookup in
+- **Small solid grey anchor** (~60% of canvas, centred) — lookup in
   progress. Smaller-than-result footprint so a result icon visibly
   "enlarges" from the same centre when the answer lands.
 
@@ -687,11 +687,11 @@ diagnostic state wins.
 
 | State | Icon |
 |---|---|
-| Exact match | filled mint circle, `#44BB99` |
-| Host-only match | filled olive circle, `#AAAA00` |
-| Not connected | filled orange circle, `#EE7733` |
-| No match | hollow grey ring, `#BBBBBB` |
-| Searching | small grey square, `#BBBBBB` |
+| Exact match | mint anchor, `#44BB99` |
+| Host-only match | olive anchor, `#AAAA00` |
+| Not connected | orange anchor, `#EE7733` |
+| No match | thin grey anchor, `#BBBBBB` |
+| Searching | small grey anchor, `#BBBBBB` |
 
 The mint+olive pair is intentionally drawn from Tol's light scheme:
 the previous bright-green (`#228833`) + teal (`#009988`) pair was hard
@@ -729,7 +729,7 @@ not-connected colour (`#EE7733`, orange).
 Needs: impl
 
 ### No-match icon
-`req~ank.icon.no-match~5`
+`req~ank.icon.no-match~6`
 
 When the host is connected but no match is found, the icon shows a
 **hollow grey ring** (`#BBBBBB` outline on transparent fill, full
@@ -741,12 +741,12 @@ visually quiet by avoiding a sea of saturated negatives.
 Needs: impl
 
 ### Searching icon
-`req~ank.icon.searching~2`
+`req~ank.icon.searching~3`
 
 While a lookup is in progress (between page-navigation / tab-switch
-and the first result), the icon shows a **small centred gray square**
-(`#BBBBBB` filled, ~50% of canvas, `default-*.png`). The smaller
-footprint means a result icon (filled circle / hollow ring) visibly
+and the first result), the icon shows a **small centred gray anchor**
+(`#BBBBBB` solid, ~60% of canvas, `default-*.png`). The smaller
+footprint means a result icon (solid / thin anchor) visibly
 "enlarges" from the same centre when the answer lands.
 The tooltip reads "AnchorHub — searching…".
 

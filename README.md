@@ -36,17 +36,17 @@ half-step down for partial / related matches (the two are visibly
 different hues so they can't be confused), orange a "caution" warning
 when the daemon is not reachable. The two "no positive result" states
 (searching, no match) share the grey hue and differ by shape only — a
-small filled square while the lookup is in flight, a hollow ring once
-it returns empty.
+small anchor while the lookup is in flight, a thin outline-weight anchor
+once it returns empty.
 
 | Icon | Meaning |
 |---|---|
-| Mint filled circle (`#44BB99`) | Current URL is anchored in a connected adapter — click to open |
-| Olive filled circle (`#AAAA00`) | A related anchor (e.g. same site) found |
-| Hollow grey ring (`#BBBBBB`) | Connected to daemon, no match |
-| Orange filled circle (`#EE7733`) | Daemon not connected |
-| Small grey square (`#BBBBBB`) | Lookup in progress |
-| Hollow grey ring + red `OFF` badge | AnchorHub paused (right-click the icon → Resume) |
+| Mint anchor (`#44BB99`) | Current URL is anchored in a connected adapter — click to open |
+| Olive anchor (`#AAAA00`) | A related anchor (e.g. same site) found |
+| Thin grey anchor (`#BBBBBB`) | Connected to daemon, no match |
+| Orange anchor (`#EE7733`) | Daemon not connected |
+| Small grey anchor (`#BBBBBB`) | Lookup in progress |
+| Thin grey anchor + red `OFF` badge | AnchorHub paused (right-click the icon → Resume) |
 
 A small digit (1-9, or `10+`) is baked into the bottom-right of the
 icon when there are multiple matches.

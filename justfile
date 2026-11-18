@@ -10,3 +10,9 @@ install:
 # Run hub tests
 test:
     cd hub && dotnet test
+
+# Keep the installed ankd at the upstream head: pull, install, wait for the next commit (Windows; installer: install or install-chrome)
+run-loop installer="install":
+    powershell -ExecutionPolicy Bypass -File scripts/run-loop.ps1 -Installer {{installer}}
+
+alias loop := run-loop
