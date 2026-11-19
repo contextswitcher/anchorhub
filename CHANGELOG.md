@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
-## [Unreleased]
+## [2026-11-18] - 2026-11-18
 
 ### Added
 
@@ -18,7 +18,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 - `ankd outlook-open <link>` finds the item in all accounts when the link names no store.
 - The installers say why the JabRef fulltext provider is disabled (fetching full texts moves to the JabRef browser-extension plugin) and how to build it in again.
 
-[Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-17...HEAD
+[2026-11-18]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-17...v2026-11-18
 
 ## [2026-11-17] - 2026-11-17
 
