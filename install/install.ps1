@@ -94,5 +94,8 @@ if (-not (Test-Path $tokenPath)) {
 
 Write-Host ""
 Write-Host 'Done. No configuration needed - AnchorHub uses the OneNote COM API directly.'
-Write-Host 'JabRef fulltext provider is currently disabled (see JABREF_FULLTEXT_AUTOENABLE).'
+Write-Host 'JabRef fulltext provider: disabled on purpose. Fetching full texts for JabRef moves to the'
+Write-Host '  JabRef browser-extension plugin, so ankd no longer starts the provider by itself.'
+Write-Host '  To use it anyway: add <DefineConstants>$(DefineConstants);JABREF_FULLTEXT_AUTOENABLE</DefineConstants>'
+Write-Host '  to a <PropertyGroup> in hub\AnchorHub.Hub\AnchorHub.Hub.csproj and run this installer again.'
 Write-Host 'Load the extension in Firefox via about:debugging > Load Temporary Add-on.'

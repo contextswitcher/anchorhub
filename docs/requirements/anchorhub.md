@@ -525,6 +525,19 @@ extended on demand. Currently:
 
 Needs: impl
 
+### Blogs — no host-only fallback
+`req~ank.match.blog-no-fallback~4`
+
+A blog host (`blog.jetbrains.com`, `blogs.oracle.com`) matches every
+saved post of that blog, not the post being read. The host-only
+fallback (and with it the domain-core fallback) is suppressed for any
+host whose first label, after an optional `www.`, is `blog` or `blogs`,
+and for the blog hosters `blogspot.com`, `wordpress.com`, `medium.com`,
+`substack.com`, `ghost.io` and `hashnode.dev` and any of their subdomains
+(their shared hoster token would also match every other blog there).
+
+Needs: impl
+
 ### GitHub Pages — no host-only fallback
 `req~ank.match.github-pages-no-fallback~1`
 
@@ -2207,7 +2220,129 @@ Needs: impl, utest
 `ankd outlook-open <anchor>` opens the item an
 `anchor://outlook/message/…` URI names in its own Outlook window, starting
 Outlook when it is not running. The item is resolved by EntryID within the
-store named by `x-store`, or across all stores when `x-store` is absent.
+store named by `x-store`, or across all stores when `x-store` is absent:
+first the default store, then each store of the session in turn until one
+resolves the EntryID. koppter stores anchors without `x-store` to keep its
+lines short.
+
+Needs: impl, utest
+
+### List the open Outlook To-Do items
+`req~ank.outlook.todos~1`
+
+`ankd outlook-todos` prints exactly one line to stdout: a JSON array of the
+open items of the To-Do List of every store of the session (default folder
+`olFolderToDo`). Stores without that folder (for example public folders)
+are skipped. Completed items — a flag with status complete, or a completed
+Outlook task — are left out. Each element carries, in this order:
+
+| Field | Value |
+|---|---|
+| `entryId` | EntryID (hex) |
+| `storeId` | StoreID of the store (hex) |
+| `store` | display name of the store |
+| `kind` | `mail` (flagged mail), `task` (Outlook task) or `other` (any other flagged item) |
+| `subject` | subject |
+| `due` | `yyyy-MM-dd` or `null`: `TaskDueDate` of a flagged item, `DueDate` of a task |
+| `start` | `yyyy-MM-dd` or `null`: `TaskStartDate` of a flagged item, `StartDate` of a task |
+| `received` | ISO 8601 receive time or `null` (always `null` for tasks) |
+| `sender` | sender name or `null` (always `null` for tasks) |
+| `anchor` | `anchor://outlook/message/<EntryID>?x-store=<StoreID>&title=<subject>&v=1` |
+
+Outlook's value for "no date", 4501-01-01, becomes `null`. The command reads
+only and does not start Outlook: when Outlook is not running, it exits
+non-zero with the reason on stderr. All stores are read in one PowerShell
+call.
+
+Needs: impl, utest
+
+### Complete an Outlook To-Do item
+`req~ank.outlook.complete~1`
+
+`ankd outlook-complete <anchor>` marks the item an
+`anchor://outlook/message/…` URI names as done in Outlook and saves it: an
+Outlook task is marked complete, a flagged mail or other flagged item gets
+its flag status set to complete. The item is resolved as for
+`outlook-open`, including the search across all stores without `x-store`.
+The command exits 0 on success; when Outlook is not running, the item
+cannot be found, or it is neither a task nor flagged, it exits non-zero with
+the reason on stderr.
+
+Needs: impl, utest
+
+### Recognize koppter's calendar blocks
+`req~ank.outlook.blocks-own~1`
+
+koppter plans tasks into time blocks and mirrors them into an Outlook
+calendar. A calendar item counts as koppter's own block only when all of
+these hold: it is an appointment; it has a user property `KoppterBlockId`
+whose value is not empty or blank; its categories, split at commas and
+semicolons and trimmed, contain `koppter` (case-insensitive); it is not
+recurring; and it is not a meeting (`MeetingStatus` 0). Subject and body
+never make an item own. The block commands below change or delete only own
+items, and never change or delete anything else.
+
+The target calendar of these commands is the default calendar
+(`olFolderCalendar`) of the default store, or, with a calendar name, the
+default calendar of the one store whose display name equals that name; no
+such store, or more than one, is an error. The commands do not start
+Outlook: when it is not running, they exit 2 with `Error: Outlook COM error:
+Outlook is not running.` on stderr. COM errors exit 2 with `Error: …` on stderr; invalid
+arguments or an invalid request exit 1 with `Error: …` on stderr and do not
+touch Outlook.
+
+Needs: impl, utest
+
+### Synchronize koppter's calendar blocks
+`req~ank.outlook.blocks-sync~1`
+
+`ankd outlook-blocks-sync` reads one UTF-8 JSON object from stdin:
+`{"calendar": null | "<store display name>", "from": "yyyy-MM-ddTHH:mm",
+"to": "yyyy-MM-ddTHH:mm", "blocks": [{"id", "start", "end", "subject",
+"body"}]}`, with local wall-clock times. The request is rejected as a whole,
+before Outlook is contacted, when it is not of this form, when `from` is not
+before `to`, when a block has an empty id, a start not before its end, or a
+start outside [`from`, `to`), or when two blocks share an id. `body` may be
+left out.
+
+Among the own items of the target calendar that start in [`from`, `to`)
+(recurrences not expanded), an item is kept when a block with its
+`KoppterBlockId` has the same start, end and subject (the first such item
+per id); every other own item there is deleted (to Deleted Items). Then each
+block without a kept item is created as an appointment with its subject,
+start, end and body, busy status tentative, sensitivity private, no
+reminder, category `koppter` and the user property `KoppterBlockId` set to
+the block id. Immediately before each deletion, the item is read again by
+EntryID and deleted only when it is still own and in the target calendar;
+otherwise it is skipped and counted as kept. Each deletion is written to the
+AnchorHub log (`%APPDATA%\AnchorHub\logs`) with EntryID, start and subject.
+The command prints one line `{"added": n, "deleted": n, "kept": n}`. The
+request travels to PowerShell over stdin, not on the command line.
+
+Needs: impl, utest
+
+### Remove all of koppter's calendar blocks
+`req~ank.outlook.blocks-clear~1`
+
+`ankd outlook-blocks-clear [--dry-run] [--calendar <store display name>]`
+deletes every own item of the target calendar, past and future, with the
+same check right before each deletion and the same log line as
+`outlook-blocks-sync`, and prints `{"deleted": n}`. With `--dry-run`, it
+changes nothing and prints `{"count": n}`, the number of own items.
+
+Needs: impl
+
+### List busy times from the Outlook calendar
+`req~ank.outlook.busy~1`
+
+`ankd outlook-busy --from yyyy-MM-dd --to yyyy-MM-dd [--calendar <store
+display name>]` prints one line: a JSON array of the items of the target
+calendar that overlap [`from` 00:00, `to` 00:00), with recurrences expanded,
+ordered by start. Each element is `{"start": "yyyy-MM-ddTHH:mm", "end":
+"yyyy-MM-ddTHH:mm", "allDay": bool, "busyStatus": "free" | "tentative" |
+"busy" | "oof" | "elsewhere"}`. koppter's own blocks and items whose subject
+ends with ` [koppter]` are left out, so koppter does not plan around its
+own blocks. `from` must be before `to`. The command reads only.
 
 Needs: impl, utest
 

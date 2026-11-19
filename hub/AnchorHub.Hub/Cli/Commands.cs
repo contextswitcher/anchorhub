@@ -262,7 +262,96 @@ internal static class Commands
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public static int OutlookOpen(string uri)
+    public static int OutlookOpen(string uri) => WithAnchor(uri, Outlook.OutlookClient.Open);
+
+    // One JSON line with the open To-Do List items of all stores; koppter
+    // mixes them into its task list.
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookTodos()
+    {
+        Console.WriteLine(Outlook.OutlookClient.Todos().ToJsonString());
+        return 0;
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookComplete(string uri) => WithAnchor(uri, Outlook.OutlookClient.Complete);
+
+    // Reads the sync request from stdin: it can be far larger than a command line.
+    // [impl->req~ank.outlook.blocks-sync~1]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookBlocksSync()
+    {
+        string json;
+        using (var reader = new StreamReader(Console.OpenStandardInput(), new System.Text.UTF8Encoding(false)))
+            json = reader.ReadToEnd();
+        KoppterSyncRequest req;
+        try { req = KoppterBlocks.ParseSyncRequest(json); }
+        catch (FormatException ex) { return Usage($"invalid request: {ex.Message}"); }
+
+        var items = Outlook.OutlookClient.CalendarItems(req.Calendar, req.From, req.To, recurrences: false, onlyMarked: true);
+        var plan = KoppterBlocks.Plan(items, req.From, req.To, req.Blocks);
+        var result = Outlook.OutlookClient.Apply(req.Calendar, plan.ToDelete.Select(i => i.EntryId), plan.ToAdd);
+        Console.WriteLine(new System.Text.Json.Nodes.JsonObject
+        {
+            ["added"] = result.Created,
+            ["deleted"] = result.Deleted,
+            ["kept"] = plan.Kept.Count + result.Skipped,
+        }.ToJsonString());
+        return 0;
+    }
+
+    // [impl->req~ank.outlook.blocks-clear~1]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookBlocksClear(string[] args)
+    {
+        var dryRun = false;
+        string? calendar = null;
+        for (var i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "--dry-run") dryRun = true;
+            else if (args[i] == "--calendar" && i + 1 < args.Length && args[i + 1].Length > 0) calendar = args[++i];
+            else return Usage($"outlook-blocks-clear: unexpected argument {args[i]}");
+        }
+        var own = Outlook.OutlookClient.CalendarItems(calendar, null, null, recurrences: false, onlyMarked: true)
+            .Where(KoppterBlocks.IsOwn).ToList();
+        if (dryRun)
+        {
+            Console.WriteLine(new System.Text.Json.Nodes.JsonObject { ["count"] = own.Count }.ToJsonString());
+            return 0;
+        }
+        var result = Outlook.OutlookClient.Apply(calendar, own.Select(i => i.EntryId), []);
+        Console.WriteLine(new System.Text.Json.Nodes.JsonObject { ["deleted"] = result.Deleted }.ToJsonString());
+        return 0;
+    }
+
+    // [impl->req~ank.outlook.busy~1]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookBusy(string[] args)
+    {
+        string? fromArg = null, toArg = null, calendar = null;
+        for (var i = 0; i < args.Length; i++)
+        {
+            var hasValue = i + 1 < args.Length && args[i + 1].Length > 0;
+            if (args[i] == "--from" && hasValue) fromArg = args[++i];
+            else if (args[i] == "--to" && hasValue) toArg = args[++i];
+            else if (args[i] == "--calendar" && hasValue) calendar = args[++i];
+            else return Usage($"outlook-busy: unexpected argument {args[i]}");
+        }
+        if (KoppterBlocks.ParseDate(fromArg) is not { } from || KoppterBlocks.ParseDate(toArg) is not { } to)
+            return Usage("outlook-busy needs --from yyyy-MM-dd and --to yyyy-MM-dd");
+        if (from >= to) return Usage("outlook-busy: --from must be before --to");
+        var items = Outlook.OutlookClient.CalendarItems(calendar, from, to, recurrences: true, onlyMarked: false);
+        Console.WriteLine(KoppterBlocks.Busy(items, from, to).ToJsonString());
+        return 0;
+    }
+
+    private static int Usage(string message)
+    {
+        Console.Error.WriteLine($"Error: {message}");
+        return 1;
+    }
+
+    private static int WithAnchor(string uri, Action<OutlookAnchor> action)
     {
         var anchor = OutlookAnchor.TryParse(uri);
         if (anchor is null)
@@ -270,14 +359,14 @@ internal static class Commands
             Console.Error.WriteLine("Not an anchor://outlook/message/... URI.");
             return 1;
         }
-        Outlook.OutlookClient.Open(anchor);
+        action(anchor);
         return 0;
     }
 
     public static int Unknown(string cmd)
     {
         Console.Error.WriteLine($"Unknown command: {cmd}");
-        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url>");
+        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url> | outlook-capture | outlook-open <anchor> | outlook-todos | outlook-complete <anchor> | outlook-blocks-sync (request on stdin) | outlook-blocks-clear [--dry-run] [--calendar <store>] | outlook-busy --from <date> --to <date> [--calendar <store>]");
         return 1;
     }
 }
