@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
-## [Unreleased]
+## [2026-11-19] - 2026-11-19
 
 ### Added
 
@@ -15,7 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - `ankd outlook-busy` also prints the subject, the EntryID, whether the item is recurring, whether it has the `Sideline` category, and the color of its first category for each item.
 
-[Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-18...HEAD
+[2026-11-19]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-18...v2026-11-19
 
 ## [2026-11-18] - 2026-11-18
 
