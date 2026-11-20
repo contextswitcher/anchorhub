@@ -172,7 +172,15 @@ internal static class OutlookClient
                 } else {
                     foreach ($it in $items) { Listed $list $it $req.onlyMarked }
                 }
-                Out 'ok:' (ConvertTo-Json -InputObject @($list) -Compress -Depth 3)
+                if ($req.colors) {
+                    $cats = New-Object System.Collections.ArrayList
+                    foreach ($c in $ol.Session.Categories) {
+                        try { [void]$cats.Add([ordered]@{ name = [string]$c.Name; color = [int]$c.Color }) } catch {}
+                    }
+                    Out 'ok:' (ConvertTo-Json -Compress -Depth 4 -InputObject ([ordered]@{ items = @($list); colors = @($cats) }))
+                } else {
+                    Out 'ok:' (ConvertTo-Json -InputObject @($list) -Compress -Depth 3)
+                }
             } elseif ($req.action -eq 'calendar-apply') {
                 $ol = Running
                 $folder = Calendar $ol $req.calendar
@@ -210,6 +218,30 @@ internal static class OutlookClient
                 Out 'ok:' (ConvertTo-Json -Compress -Depth 3 -InputObject ([ordered]@{
                     deleted = @($deleted); skipped = $skipped; created = $created; errors = @($errors)
                 }))
+            } elseif ($req.action -eq 'item-read') {
+                $ol = Running
+                $it = Resolve $ol $req.entryId $req.storeId
+                $isAppt = ($it.Class -eq 26)                                           # olAppointment
+                Out 'ok:' (ConvertTo-Json -Compress -InputObject ([ordered]@{
+                    class         = [int]$it.Class
+                    entryId       = $it.EntryID
+                    storeId       = $it.Parent.StoreID
+                    categories    = [string]$it.Categories
+                    blockId       = if ($isAppt) { BlockId $it } else { $null }
+                    isRecurring   = if ($isAppt) { [bool]$it.IsRecurring } else { $false }
+                    meetingStatus = if ($isAppt) { [int]$it.MeetingStatus } else { 0 }
+                    separator     = [Globalization.CultureInfo]::CurrentCulture.TextInfo.ListSeparator
+                }))
+            } elseif ($req.action -eq 'categories-set') {
+                # Re-read and re-check right before the change; only Categories is written.
+                $ol = Running
+                $it = $ol.Session.GetItemFromID($req.entryId, $req.storeId)
+                if ($it.Class -ne 26) { throw 'The item is not an appointment.' }
+                if (IsOwn $it) { throw 'The item is one of koppter''s own blocks.' }
+                if ([string]$it.Categories -cne [string]$req.expected) { throw 'The categories of the item changed meanwhile.' }
+                $it.Categories = [string]$req.categories
+                $it.Save()
+                Out 'ok:' ''
             } else { throw 'unknown action' }
         } catch { Out 'err:' $_.ToString() }
         """;
@@ -253,6 +285,57 @@ internal static class OutlookClient
             recurrences,
             onlyMarked,
         })));
+
+    /// <summary>
+    /// Like <see cref="CalendarItems"/> with recurrences expanded, plus the session's
+    /// categories (name → <c>OlCategoryColor</c>), read in the same PowerShell call.
+    /// </summary>
+    // [impl->req~ank.outlook.busy~2]
+    public static (IReadOnlyList<CalendarItem> Items, IReadOnlyDictionary<string, int> Colors) BusyItems(
+        string? calendar, DateTime from, DateTime to)
+    {
+        var result = JsonNode.Parse(Run(new
+        {
+            action = "calendar-list",
+            calendar,
+            from = KoppterBlocks.FormatTime(from),
+            to = KoppterBlocks.FormatTime(to),
+            recurrences = true,
+            onlyMarked = false,
+            colors = true,
+        }))!.AsObject();
+        return (KoppterBlocks.ParseItems(result["items"]), OutlookCategories.ParseColors(result["colors"]));
+    }
+
+    /// <summary>An item resolved from an anchor, as <c>outlook-sideline</c> needs it.</summary>
+    public sealed record ItemInfo(
+        int Class, string EntryId, string StoreId, string Categories,
+        string? BlockId, bool IsRecurring, int MeetingStatus, char Separator);
+
+    // [impl->req~ank.outlook.sideline~1]
+    public static ItemInfo ReadItem(OutlookAnchor anchor)
+    {
+        var o = JsonNode.Parse(Run(new { action = "item-read", entryId = anchor.EntryId, storeId = anchor.StoreId }))!.AsObject();
+        var sep = (string?)o["separator"];
+        return new ItemInfo(
+            (int?)o["class"] ?? 0,
+            (string?)o["entryId"] ?? anchor.EntryId,
+            (string?)o["storeId"] ?? "",
+            (string?)o["categories"] ?? "",
+            (string?)o["blockId"],
+            (bool?)o["isRecurring"] ?? true,
+            (int?)o["meetingStatus"] ?? -1,
+            sep is { Length: > 0 } && (sep[0] == ',' || sep[0] == ';') ? sep[0] : ',');
+    }
+
+    /// <summary>
+    /// Writes <paramref name="categories"/> to the appointment and saves it, after the
+    /// script checked again that it is an appointment, not own, and still has
+    /// <paramref name="expected"/> as its categories.
+    /// </summary>
+    // [impl->req~ank.outlook.sideline~1]
+    public static void SetCategories(ItemInfo item, string expected, string categories) =>
+        Run(new { action = "categories-set", entryId = item.EntryId, storeId = item.StoreId, expected, categories });
 
     /// <summary>The outcome of <see cref="Apply"/>.</summary>
     public sealed record ApplyResult(int Deleted, int Skipped, int Created);

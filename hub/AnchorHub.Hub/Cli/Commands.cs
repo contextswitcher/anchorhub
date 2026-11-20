@@ -324,7 +324,7 @@ internal static class Commands
         return 0;
     }
 
-    // [impl->req~ank.outlook.busy~1]
+    // [impl->req~ank.outlook.busy~2]
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public static int OutlookBusy(string[] args)
     {
@@ -340,9 +340,35 @@ internal static class Commands
         if (KoppterBlocks.ParseDate(fromArg) is not { } from || KoppterBlocks.ParseDate(toArg) is not { } to)
             return Usage("outlook-busy needs --from yyyy-MM-dd and --to yyyy-MM-dd");
         if (from >= to) return Usage("outlook-busy: --from must be before --to");
-        var items = Outlook.OutlookClient.CalendarItems(calendar, from, to, recurrences: true, onlyMarked: false);
-        Console.WriteLine(KoppterBlocks.Busy(items, from, to).ToJsonString());
+        var (items, colors) = Outlook.OutlookClient.BusyItems(calendar, from, to);
+        Console.WriteLine(KoppterBlocks.Busy(items, from, to, colors).ToJsonString());
         return 0;
+    }
+
+    // Changes only the categories of one appointment (for a series: the master).
+    // [impl->req~ank.outlook.sideline~1]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OutlookSideline(string[] args)
+    {
+        if (args.Length != 2 || (args[1] != "on" && args[1] != "off"))
+            return Usage("outlook-sideline needs <anchor> on|off");
+        if (OutlookAnchor.TryParse(args[0]) is not { } anchor)
+            return Usage("not an anchor://outlook/message/... URI");
+        var on = args[1] == "on";
+        var item = Outlook.OutlookClient.ReadItem(anchor);
+        if (item.Class != 26) return Refuse("the item is not an appointment");
+        if (KoppterBlocks.IsOwn(item.BlockId, item.Categories, item.IsRecurring, item.MeetingStatus))
+            return Refuse("the item is one of koppter's own blocks");
+        var updated = OutlookCategories.SetSideline(item.Categories, on, item.Separator);
+        if (updated != item.Categories) Outlook.OutlookClient.SetCategories(item, item.Categories, updated);
+        Console.WriteLine(new System.Text.Json.Nodes.JsonObject { ["sideline"] = on }.ToJsonString());
+        return 0;
+    }
+
+    private static int Refuse(string message)
+    {
+        Console.Error.WriteLine($"Error: {message}");
+        return 2;
     }
 
     private static int Usage(string message)
@@ -366,7 +392,7 @@ internal static class Commands
     public static int Unknown(string cmd)
     {
         Console.Error.WriteLine($"Unknown command: {cmd}");
-        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url> | outlook-capture | outlook-open <anchor> | outlook-todos | outlook-complete <anchor> | outlook-blocks-sync (request on stdin) | outlook-blocks-clear [--dry-run] [--calendar <store>] | outlook-busy --from <date> --to <date> [--calendar <store>]");
+        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url> | outlook-capture | outlook-open <anchor> | outlook-todos | outlook-complete <anchor> | outlook-blocks-sync (request on stdin) | outlook-blocks-clear [--dry-run] [--calendar <store>] | outlook-busy --from <date> --to <date> [--calendar <store>] | outlook-sideline <anchor> on|off");
         return 1;
     }
 }

@@ -225,7 +225,7 @@ public class KoppterBlocksRequestTests
     }
 }
 
-// [utest->req~ank.outlook.busy~1]
+// [utest->req~ank.outlook.busy~2]
 public class KoppterBlocksBusyTests
 {
     private static DateTime T(string s) => KoppterBlocksOwnTests.T(s);
@@ -235,7 +235,7 @@ public class KoppterBlocksBusyTests
     {
         CalendarItem[] items =
         [
-            new("E3", null, null, true, 0, T("2026-11-18T14:00"), T("2026-11-18T15:00"), "Series", BusyStatus: 4),
+            new("E3", null, "Sideline; Work", true, 0, T("2026-11-18T14:00"), T("2026-11-18T15:00"), "Series", BusyStatus: 4),
             new("E1", null, "Work", false, 1, T("2026-11-17T23:00"), T("2026-11-18T01:00"), "Night", BusyStatus: 2),
             new("E2", null, null, false, 0, T("2026-11-18T00:00"), T("2026-11-19T00:00"), "Holiday", AllDay: true, BusyStatus: 3),
             new("K1", "b1", "koppter", false, 0, T("2026-11-18T09:00"), T("2026-11-18T10:00"), "Own block", BusyStatus: 1),
@@ -243,15 +243,16 @@ public class KoppterBlocksBusyTests
             new("X1", null, null, false, 0, T("2026-11-17T08:00"), T("2026-11-18T00:00"), "Ends at from"),
             new("X2", null, null, false, 0, T("2026-11-19T00:00"), T("2026-11-19T01:00"), "Starts at to"),
             new("F1", null, null, false, 0, T("2026-11-18T16:00"), T("2026-11-18T17:00"), "Free", BusyStatus: 0),
-            new("T1", null, null, false, 0, T("2026-11-18T17:00"), T("2026-11-18T18:00"), "Maybe", BusyStatus: 1),
+            new("T1", null, null, false, 0, T("2026-11-18T17:00"), T("2026-11-18T18:00"), "", BusyStatus: 1),
         ];
-        var busy = KoppterBlocks.Busy(items, T("2026-11-18T00:00"), T("2026-11-19T00:00"));
+        var colors = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["Work"] = 8 };
+        var busy = KoppterBlocks.Busy(items, T("2026-11-18T00:00"), T("2026-11-19T00:00"), colors);
         Assert.Equal(
-            """[{"start":"2026-11-17T23:00","end":"2026-11-18T01:00","allDay":false,"busyStatus":"busy"},""" +
-            """{"start":"2026-11-18T00:00","end":"2026-11-19T00:00","allDay":true,"busyStatus":"oof"},""" +
-            """{"start":"2026-11-18T14:00","end":"2026-11-18T15:00","allDay":false,"busyStatus":"elsewhere"},""" +
-            """{"start":"2026-11-18T16:00","end":"2026-11-18T17:00","allDay":false,"busyStatus":"free"},""" +
-            """{"start":"2026-11-18T17:00","end":"2026-11-18T18:00","allDay":false,"busyStatus":"tentative"}]""",
+            """[{"start":"2026-11-17T23:00","end":"2026-11-18T01:00","allDay":false,"busyStatus":"busy","subject":"Night","entryId":"E1","recurring":false,"sideline":false,"color":"#9DB7E8"},""" +
+            """{"start":"2026-11-18T00:00","end":"2026-11-19T00:00","allDay":true,"busyStatus":"oof","subject":"Holiday","entryId":"E2","recurring":false,"sideline":false,"color":null},""" +
+            """{"start":"2026-11-18T14:00","end":"2026-11-18T15:00","allDay":false,"busyStatus":"elsewhere","subject":"Series","entryId":"E3","recurring":true,"sideline":true,"color":"#9DB7E8"},""" +
+            """{"start":"2026-11-18T16:00","end":"2026-11-18T17:00","allDay":false,"busyStatus":"free","subject":"Free","entryId":"F1","recurring":false,"sideline":false,"color":null},""" +
+            """{"start":"2026-11-18T17:00","end":"2026-11-18T18:00","allDay":false,"busyStatus":"tentative","subject":"","entryId":"T1","recurring":false,"sideline":false,"color":null}]""",
             busy.ToJsonString());
     }
 

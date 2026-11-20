@@ -2333,16 +2333,56 @@ changes nothing and prints `{"count": n}`, the number of own items.
 Needs: impl
 
 ### List busy times from the Outlook calendar
-`req~ank.outlook.busy~1`
+`req~ank.outlook.busy~2`
 
 `ankd outlook-busy --from yyyy-MM-dd --to yyyy-MM-dd [--calendar <store
 display name>]` prints one line: a JSON array of the items of the target
 calendar that overlap [`from` 00:00, `to` 00:00), with recurrences expanded,
-ordered by start. Each element is `{"start": "yyyy-MM-ddTHH:mm", "end":
-"yyyy-MM-ddTHH:mm", "allDay": bool, "busyStatus": "free" | "tentative" |
-"busy" | "oof" | "elsewhere"}`. koppter's own blocks and items whose subject
-ends with ` [koppter]` are left out, so koppter does not plan around its
-own blocks. `from` must be before `to`. The command reads only.
+ordered by start. Each element carries, in this order:
+
+| Field | Value |
+|---|---|
+| `start` | `yyyy-MM-ddTHH:mm` |
+| `end` | `yyyy-MM-ddTHH:mm` |
+| `allDay` | bool |
+| `busyStatus` | `free`, `tentative`, `busy`, `oof` or `elsewhere` |
+| `subject` | subject, `""` when it has none |
+| `entryId` | EntryID (hex); an occurrence of a recurring series carries the EntryID of the series master, which is also what `GetItemFromID` resolves an anchor with this EntryID to |
+| `recurring` | bool, `IsRecurring` |
+| `sideline` | bool: the categories, split at commas and semicolons and trimmed, contain `Sideline` (case-insensitive) |
+| `color` | `#RRGGBB` or `null`: the color of the first category that is neither `koppter` nor `Sideline`, looked up in the category list of the session; `null` when there is no such category, it is not in that list, or its color is none |
+
+The preset colors 1 to 25 of `OlCategoryColor` map to the swatches that
+classic Outlook shows for them. The category list is read once per call.
+koppter's own blocks and items whose subject ends with ` [koppter]` are left
+out, so koppter does not plan around its own blocks. `from` must be before
+`to`. The command reads only.
+
+Needs: impl, utest
+
+### Mark an Outlook appointment as sideline
+`req~ank.outlook.sideline~1`
+
+A sideline appointment (as in SkedPal) stays in the calendar, but koppter
+plans its time as free; the mark is the category `Sideline`.
+`ankd outlook-sideline <anchor> on|off` resolves the item an
+`anchor://outlook/message/…` URI names as `outlook-open` does, including the
+search across all stores without `x-store`. For an appointment, `on` appends
+`Sideline` to its categories and `off` removes every entry equal to
+`Sideline` (trimmed, case-insensitive); all other categories keep their
+text and order, and a list without a separator gets the list separator of
+the user's locale. Then the item is saved; nothing else of it changes and
+nothing is deleted. For an occurrence of a recurring series the change hits
+the series master, and so the whole series. When the categories already have
+the wanted state, nothing is saved. Right before the change, the item is read
+again and the change is refused when it is no longer an appointment, has
+become own, or its categories changed meanwhile.
+
+The command prints `{"sideline": true | false}`, the resulting state, and
+exits 0. It exits 2 with `Error: …` on stderr when the item is not an
+appointment, is one of koppter's own blocks, cannot be found, or Outlook is
+not running (it does not start Outlook); it exits 1 with `Error: …` on
+stderr for invalid arguments.
 
 Needs: impl, utest
 
