@@ -203,10 +203,14 @@ public static class KoppterBlocks
     /// <summary>
     /// The items overlapping [from, to), ordered by start, without koppter's own
     /// blocks and without items whose subject ends with <c> [koppter]</c>.
+    /// <paramref name="colors"/> maps the session's category names to their
+    /// <c>OlCategoryColor</c>.
     /// </summary>
-    // [impl->req~ank.outlook.busy~1]
-    public static JsonArray Busy(IEnumerable<CalendarItem> items, DateTime from, DateTime to)
+    // [impl->req~ank.outlook.busy~2]
+    public static JsonArray Busy(IEnumerable<CalendarItem> items, DateTime from, DateTime to,
+        IReadOnlyDictionary<string, int>? colors = null)
     {
+        colors ??= new Dictionary<string, int>();
         var result = new JsonArray();
         foreach (var i in items
                      .Where(i => i.Start < to && i.End > from && !IsOwn(i) &&
@@ -219,6 +223,12 @@ public static class KoppterBlocks
                 ["end"] = FormatTime(i.End),
                 ["allDay"] = i.AllDay,
                 ["busyStatus"] = BusyStatusName(i.BusyStatus),
+                ["subject"] = i.Subject,
+                // An occurrence of a series carries the EntryID of the series master.
+                ["entryId"] = i.EntryId,
+                ["recurring"] = i.IsRecurring,
+                ["sideline"] = OutlookCategories.Contains(i.Categories, OutlookCategories.Sideline),
+                ["color"] = OutlookCategories.DisplayColor(i.Categories, colors),
             });
         }
         return result;
