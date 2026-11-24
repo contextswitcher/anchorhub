@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
+## [Unreleased]
+
+### Fixed
+
+- `just install` no longer warns that System.Data.OleDb does not support net8.0-windows.
+
+[Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-19...HEAD
+
 ## [2026-11-19] - 2026-11-19
 
 ### Added
