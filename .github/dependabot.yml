@@ -9,6 +9,10 @@ updates:
     groups:
       nuget:
         patterns: ["*"]
+    ignore:
+      # 11.x requires net10.0; the hub targets net8.0
+      - dependency-name: System.Data.OleDb
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

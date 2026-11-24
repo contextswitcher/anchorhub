@@ -11,6 +11,12 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - `ankd version` prints the version of the build and the commands it accepts as one JSON line, so that koppter can tell whether this AnchorHub has the commands it needs; the release binaries carry their release date as version.
 
+### Fixed
+
+- `just install` no longer warns that System.Data.OleDb does not support net8.0-windows.
+
+[Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-19...HEAD
+
 ## [2026-11-19] - 2026-11-19
 
 ### Added
@@ -21,7 +27,6 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - `ankd outlook-busy` also prints the subject, the EntryID, whether the item is recurring, whether it has the `Sideline` category, and the color of its first category for each item.
 
-[Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-19...HEAD
 [2026-11-19]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-18...v2026-11-19
 
 ## [2026-11-18] - 2026-11-18
