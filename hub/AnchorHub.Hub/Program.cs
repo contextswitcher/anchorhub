@@ -1,12 +1,21 @@
 using System.Net;
+using AnchorHub.Hub.Cli;
 using AnchorHub.Hub.Forwarding;
 using AnchorHub.Hub.NativeMessaging;
 
-#if WINDOWS
-using AnchorHub.Hub.Cli;
-#endif
-
 #pragma warning disable CA1416 // Windows-only entry points are gated below
+
+// Before everything else: an older ankd treats an unknown command as a native-messaging start,
+// so a caller can tell a build without `version` by its empty output.
+if (args is ["version", ..])
+{
+#if WINDOWS
+    Console.WriteLine(VersionInfo.Json(VersionInfo.Version, VersionInfo.WindowsCommands));
+#else
+    Console.WriteLine(VersionInfo.Json(VersionInfo.Version, []));
+#endif
+    return 0;
+}
 
 // --token-file=<path> is shared across --listen and --forward. Read once
 // up front so we can fail-fast on a bad path before opening sockets.
@@ -166,7 +175,7 @@ if (listenArg is not null)
 // outlook-* ones Outlook) over COM,
 // so they are Windows-only too. Anything else (no args, flags only, or an
 // unknown first token) falls through to the native-messaging host below.
-var knownCmds = new HashSet<string> { "lookup", "lookup-name", "search-wsi", "outlook-capture", "outlook-open", "outlook-todos", "outlook-complete", "outlook-blocks-sync", "outlook-blocks-clear", "outlook-busy", "outlook-sideline" };
+var knownCmds = new HashSet<string>(VersionInfo.WindowsCommands);
 if (args.Length > 0 &&
     !args[0].StartsWith("--", StringComparison.Ordinal) &&
     knownCmds.Contains(args[0]))

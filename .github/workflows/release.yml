@@ -90,6 +90,7 @@ jobs:
               rid=${target%%:*}
               dotnet publish hub/AnchorHub.Hub/AnchorHub.Hub.csproj -c Release -r "$rid" -f "${target#*:}" \
                 --self-contained true -p:PublishSingleFile=true -p:EnableWindowsTargeting=true \
+                -p:Version="${d//-/.}" -p:InformationalVersion="$d" \
                 -o "$RUNNER_TEMP/publish-$d-$rid" --nologo
               ext=
               if [ "$rid" = win-x64 ]; then ext=.exe; fi

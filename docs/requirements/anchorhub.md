@@ -2008,6 +2008,21 @@ is a possible future refinement if lazy detection proves insufficient.
 
 Needs: req
 
+### Version and commands
+`req~ank.cli.version~1`
+
+`ankd version` prints one line, `{"version": "…", "commands": […]}`, and
+exits 0, on every platform. `version` is the informational version of the
+build: the CalVer date `yyyy-MM-dd` for a release, `1.0.0` for a local
+build, each followed by `+<commit>` when the SDK knows the commit.
+`commands` lists `version` and the CLI commands that the build accepts:
+the OneNote and `outlook-*` commands on Windows, none besides `version`
+elsewhere. A caller such as koppter checks this list for the commands it
+needs; a build older than this command prints nothing, as it starts the
+native-messaging host on an unknown first argument.
+
+Needs: impl, utest
+
 ## JabRef Integration
 
 ### Fulltext PDF fetch
