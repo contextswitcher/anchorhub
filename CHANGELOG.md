@@ -12,13 +12,13 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 - `ankd version` prints the version of the build and the commands it accepts as one JSON line, so that koppter can tell whether this AnchorHub has the commands it needs; the release binaries carry their release date as version.
 - `ankd onenote-backlinks-sync` keeps links back to the ContextSwitcher and koppter tasks that link to a OneNote page in a block beside the title of that page, one row per application with its icon: done tasks are struck through, and the link of a deleted task or category disappears.
 
-### Fixed
-
-- `just install` no longer warns that System.Data.OleDb does not support the target framework.
-
 ### Changed
 
 - Building AnchorHub needs the .NET 10 SDK; the Windows installers install it via winget if missing.
+
+### Fixed
+
+- `just install` no longer warns that System.Data.OleDb does not support the target framework.
 
 [Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-19...HEAD
 
