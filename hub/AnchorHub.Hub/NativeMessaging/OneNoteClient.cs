@@ -131,6 +131,47 @@ internal sealed class OneNoteClient : IOneNoteBackend, IDisposable
                     $app.UpdatePageContent($pageXml, [DateTime]::MinValue, 45, $false)
                     $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pageId))
                     Write-Output "ok:$b64"
+                } elseif ($req.action -eq 'resolveLink') {
+                    # The page an onenote: link names: the section by its path (or the
+                    # section-id), then the page whose own hyperlink carries the page-id.
+                    $ns  = 'http://schemas.microsoft.com/office/onenote/2013/onenote'
+                    $xml = ''
+                    $app.GetHierarchy('', 3, [ref]$xml)              # 3 = hsSections
+                    $doc = [xml]$xml
+                    $nsm = New-Object Xml.XmlNamespaceManager($doc.NameTable)
+                    $nsm.AddNamespace('one', $ns)
+                    $found = ''
+                    foreach ($sec in $doc.SelectNodes('//one:Section', $nsm)) {
+                        if ($found) { break }
+                        if ($sec.isInRecycleBin -eq 'true') { continue }
+                        $path = [Uri]::UnescapeDataString([string]$sec.path)
+                        $byId = $req.sectionGuid -and ([string]$sec.ID).ToLower().StartsWith('{' + $req.sectionGuid + '}')
+                        if (-not $byId -and $path -ne $req.sectionPath) { continue }
+                        $px = ''
+                        $app.GetHierarchy($sec.ID, 4, [ref]$px)      # 4 = hsPages
+                        $pdoc = [xml]$px
+                        $pnsm = New-Object Xml.XmlNamespaceManager($pdoc.NameTable)
+                        $pnsm.AddNamespace('one', $ns)
+                        foreach ($p in $pdoc.SelectNodes('//one:Page', $pnsm)) {
+                            if ($p.isInRecycleBin -eq 'true') { continue }
+                            $link = ''
+                            $app.GetHyperlinkToObject($p.ID, '', [ref]$link)
+                            if ($link.ToLower().Contains('page-id={' + $req.pageGuid + '}')) { $found = $p.ID; break }
+                        }
+                    }
+                    $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($found))
+                    Write-Output "ok:$b64"
+                } elseif ($req.action -eq 'getPage') {
+                    $xml = ''
+                    $app.GetPageContent($req.pageId, [ref]$xml, 0, 2) # piBasic, xs2013
+                    $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($xml))
+                    Write-Output "ok:$b64"
+                } elseif ($req.action -eq 'updatePage') {
+                    $app.UpdatePageContent($req.xml, [DateTime]::MinValue, 2, $false)
+                    Write-Output 'ok:'
+                } elseif ($req.action -eq 'deleteContent') {
+                    $app.DeletePageContent($req.pageId, $req.objectId, [DateTime]::MinValue, $false)
+                    Write-Output 'ok:'
                 } else {
                     Write-Output 'err:unknown action'
                 }
@@ -235,6 +276,25 @@ internal sealed class OneNoteClient : IOneNoteBackend, IDisposable
         }
         return ids.Where(_pages.ContainsKey).Select(id => _pages[id]).ToList();
     }
+
+    /// <summary>The ID of the page an <c>onenote:</c> link names, or null when OneNote does not know it.</summary>
+    public string? ResolveLink(OneNoteLinkParts parts)
+    {
+        if (parts.PageGuid is null) return null;
+        var id = SendRequest(new { action = "resolveLink", sectionPath = parts.SectionPath, sectionGuid = parts.SectionGuid, pageGuid = parts.PageGuid });
+        return id.Length > 0 ? id : null;
+    }
+
+    /// <summary>The page XML (2013 schema, without binary data), or null when the page is gone.</summary>
+    public string? TryGetPage(string pageId)
+    {
+        try { return SendRequest(new { action = "getPage", pageId }); }
+        catch (InvalidOperationException) { return null; }
+    }
+
+    public void UpdatePage(string xml) => SendRequest(new { action = "updatePage", xml });
+
+    public void DeleteContent(string pageId, string objectId) => SendRequest(new { action = "deleteContent", pageId, objectId });
 
     /// <summary>
     /// Opens the specified page in the OneNote desktop app.

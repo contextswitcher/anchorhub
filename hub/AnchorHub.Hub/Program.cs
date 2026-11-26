@@ -205,6 +205,7 @@ if (args.Length > 0 &&
             "outlook-blocks-clear" => Commands.OutlookBlocksClear(args[1..]),
             "outlook-busy"         => Commands.OutlookBusy(args[1..]),
             "outlook-sideline"     => Commands.OutlookSideline(args[1..]),
+            "onenote-backlinks-sync" => Commands.OneNoteBacklinksSync(args[1..]),
             _             => Commands.Unknown(args[0]),
         };
     }

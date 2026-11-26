@@ -2210,6 +2210,44 @@ section is hidden.
 
 Needs: impl
 
+## OneNote Backlinks
+
+### Backlinks from other applications at the top of a OneNote page
+`req~ank.onenote.backlinks~1`
+
+`ankd onenote-backlinks-sync [--all]` reads one UTF-8 JSON object from
+stdin: `{"source": "<[a-z0-9-]+>", "name": "<display name>", "links":
+[{"note": "onenote:…", "label": "…", "url": "<absolute URL>", "done":
+false}]}`. `name` defaults to `source`, `done` to false. The request is
+rejected as a whole (exit 1, `Error: …` on stderr, OneNote not contacted)
+when it is not of this form or a `note` is not an `onenote:` link.
+
+`links` is the complete set of the source: it replaces the set the source
+sent before. Links name the same page when they carry the same `page-id`
+(the title in the link may differ). For every page that a link of any
+source names, the page carries one line, `↩ ` followed by one hyperlink
+per link (`<name>: <label>` to `url`, struck through when `done`),
+ordered by source name, then open before done, then label. The line is
+the first paragraph of the topmost outline that is not one of OneMore's
+(it carries no `one:Meta`), or a new outline on a page without one; it is
+marked with the `one:Meta` `anchorhub-backlinks` and found again by that
+marker. When no link names a page any more, its line is deleted. Nothing
+else on the page changes.
+
+The links of all sources and the line last written to each page are kept
+in `%LOCALAPPDATA%\AnchorHub\onenote-backlinks.json`; OneNote is only
+contacted for pages whose line differs from the last written one, and
+`--all` rewrites the line of every known page (to repair a line edited by
+hand). A page is found by the section of the link (its path, or its
+`section-id`) and the page whose own hyperlink carries the `page-id`. A
+page that cannot be found or written is reported in `failed` and tried
+again by the next run; a page that is gone needs no removal. Runs are
+serialised, so two applications may sync at the same time. On success,
+`ankd` prints `{"updated": n, "removed": n, "unchanged": n, "failed":
+[{"note", "error"}]}` and exits 0.
+
+Needs: impl, utest
+
 ## Outlook Integration
 
 Classic desktop Outlook, reached over COM (Windows only). An Outlook item

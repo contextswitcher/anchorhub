@@ -18,6 +18,7 @@ internal static class VersionInfo
         "lookup", "lookup-name", "search-wsi",
         "outlook-capture", "outlook-open", "outlook-todos", "outlook-complete",
         "outlook-blocks-sync", "outlook-blocks-clear", "outlook-busy", "outlook-sideline",
+        "onenote-backlinks-sync",
     ];
 
     /// <summary>The informational version: the CalVer of a release, <c>1.0.0</c> for a local build, each with <c>+commit</c> when the SDK knows it.</summary>

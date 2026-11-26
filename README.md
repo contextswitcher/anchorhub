@@ -251,6 +251,17 @@ OK/Cancel-style buttons), and links to auth hosts (`login.*`,
 `https://login.tailscale.com/`) are skipped — these are never pasted
 reference URLs, so a marker beside them would be noise.
 
+### Backlinks on OneNote pages
+
+ContextSwitcher and koppter send `ankd onenote-backlinks-sync` the
+complete list of their tasks (and categories) that link to a OneNote page.
+`ankd` keeps one line at the top of each such page, `↩ ContextSwitcher:
+Fix NPE · koppter: Call the dentist`, each entry a link back into the
+application. A done task is struck through; a deleted task or category
+loses its entry, and the line goes when no entry is left. The line carries
+a marker, so AnchorHub only ever rewrites its own line. `--all` rewrites
+every line, e.g. after editing one by hand.
+
 ### Diagnostic CLI
 
 ```powershell
