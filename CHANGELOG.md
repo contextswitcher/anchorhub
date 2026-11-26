@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
-## [Unreleased]
+## [2026-11-25] - 2026-11-25
 
 ### Added
 
@@ -20,7 +20,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - `just install` no longer warns that System.Data.OleDb does not support the target framework.
 
-[Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-19...HEAD
+[2026-11-25]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-19...v2026-11-25
 
 ## [2026-11-19] - 2026-11-19
 
