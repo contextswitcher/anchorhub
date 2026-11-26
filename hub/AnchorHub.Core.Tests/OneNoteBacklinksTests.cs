@@ -163,21 +163,22 @@ public class OneNoteBacklinksTests
         OneNoteBacklinks.Line([(new BacklinkSource { Name = "k" }, new Backlink(Note, text, "k://t", false))])!.ToString();
 
     private const string Content =
-        """<one:Outline objectID="c"><one:Position x="36" y="86"/><one:OEChildren><one:OE objectID="t1"><one:T>first</one:T></one:OE></one:OEChildren></one:Outline>""";
+        """<one:Outline objectID="c"><one:Position x="36" y="86"/><one:Size width="500" height="400"/><one:OEChildren><one:OE objectID="t1"><one:T>first</one:T></one:OE></one:OEChildren></one:Outline>""";
 
     private static string Marked(string id, string x = "500", string text = "old") =>
         $$"""<one:Outline objectID="{{id}}"><one:Position x="{{x}}" y="20" z="1"/><one:Meta name="{{OneNoteBacklinks.Marker}}" content="1"/><one:OEChildren><one:OE><one:T>{{text}}</one:T></one:OE></one:OEChildren></one:Outline>""";
 
     [Fact]
-    public void EditAddsBlockOfItsOwnBesideTheTitle()
+    public void EditAddsBlockOfItsOwnBelowEverything()
     {
         var update = XElement.Parse(OneNoteBacklinks.Edit(PageXml(Content), LineXml("x")).UpdateXml!);
         Assert.Equal("{P}", update.Attribute("ID")!.Value);
         var outline = Assert.Single(update.Elements(One + "Outline"));
         Assert.Null(outline.Attribute("objectID"));
         Assert.Equal(OneNoteBacklinks.Marker, outline.Element(One + "Meta")!.Attribute("name")!.Value);
-        Assert.Equal("360", outline.Element(One + "Position")!.Attribute("x")!.Value);
-        Assert.Equal("36", outline.Element(One + "Position")!.Attribute("y")!.Value);
+        // created below the lowest outline (y 86 + height 400), moved beside the title afterwards
+        Assert.Equal("36", outline.Element(One + "Position")!.Attribute("x")!.Value);
+        Assert.Equal("522", outline.Element(One + "Position")!.Attribute("y")!.Value);
         Assert.Contains(">x<", outline.Descendants(One + "T").Last().Value);
         Assert.DoesNotContain("first", update.ToString());
     }
@@ -185,8 +186,8 @@ public class OneNoteBacklinksTests
     [Fact]
     public void BlockStandsRightOfALongTitle()
     {
-        Assert.Equal(360, OneNoteBacklinks.BlockLeft(XElement.Parse(PageXml("", "Short"))));
-        Assert.Equal(36 + 40 * 11 + 48, OneNoteBacklinks.BlockLeft(XElement.Parse(PageXml("", new string('a', 40)))));
+        Assert.Equal(234, OneNoteBacklinks.BlockLeft(XElement.Parse(PageXml("", "Marcel Weller"))));
+        Assert.Equal(36 + 40 * 10 + 8, OneNoteBacklinks.BlockLeft(XElement.Parse(PageXml("", new string('a', 40)))));
         Assert.Equal(720, OneNoteBacklinks.BlockLeft(XElement.Parse(PageXml("", new string('a', 200)))));
     }
 
@@ -206,5 +207,25 @@ public class OneNoteBacklinksTests
     {
         Assert.Equal(new BacklinkEdit(null, "b"), OneNoteBacklinks.Edit(PageXml(Content + Marked("b")), null));
         Assert.Equal(BacklinkEdit.None, OneNoteBacklinks.Edit(PageXml(Content), null));
+    }
+
+    [Fact]
+    public void EditTellsWhetherItCreatesTheBlock()
+    {
+        Assert.True(OneNoteBacklinks.Edit(PageXml(Content), LineXml("x")).Created);
+        Assert.False(OneNoteBacklinks.Edit(PageXml(Content + Marked("b")), LineXml("x")).Created);
+    }
+
+    [Fact]
+    public void PlaceMovesANewBlockBesideTheTitleUnlessItIsThere()
+    {
+        var update = XElement.Parse(OneNoteBacklinks.Place(PageXml(Content + Marked("b", x: "234")).Replace("y=\"20\"", "y=\"66.1\""))!);
+        var outline = Assert.Single(update.Elements(One + "Outline"));
+        Assert.Equal("b", outline.Attribute("objectID")!.Value);
+        Assert.Equal("14.4", outline.Element(One + "Position")!.Attribute("y")!.Value);
+        Assert.Contains("old", outline.ToString());
+
+        Assert.Null(OneNoteBacklinks.Place(PageXml(Content + Marked("b", x: "234")).Replace("y=\"20\"", "y=\"14.4\"")));
+        Assert.Null(OneNoteBacklinks.Place(PageXml(Content)));
     }
 }

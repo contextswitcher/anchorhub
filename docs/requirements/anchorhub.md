@@ -2233,8 +2233,12 @@ row per source, ordered by name. The row holds the source's icon (12 pt,
 right-aligned, as OneNote keeps a column at least about 37 pt wide), or
 its name when it sent none, and then one hyperlink per link (`label` to
 `url`, struck through when `done`), open before done, then by label. A
-new block stands at the height of the title (y = 36 pt), right of it
-(x estimated from the length of the title, between 360 and 720 pt); an
+new block is created below all other outlines (OneNote pushes outlines
+aside for a new one that overlaps them, which would move the content) and
+then moved to the top of the title area (y = 14.4 pt), just right
+of the title (x = 36 pt + max(190 pt, 10 pt per character of the title)
++ 8 pt, at most 720 pt, as the page XML does not tell the width of the
+title); an
 existing block keeps its position, so the user may move it, and gets new
 content. When no link names a page any more, the block is deleted.
 Nothing else on the page changes, so the content of the page never moves.
