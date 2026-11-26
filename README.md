@@ -12,7 +12,7 @@ adapters for individual applications.
 | OneNote adapter | working (URL-in-page matching, page creation, name search) |
 | JabRef adapter | in progress |
 | ContextSwitcher adapter | working (task-URL matching + `contextswitcher://` deep links) |
-| Outlook adapter | in progress (classic Outlook: `ankd outlook-capture` / `outlook-open <anchor>` / `outlook-todos` / `outlook-complete <anchor>` / `outlook-blocks-sync` / `outlook-blocks-clear` / `outlook-busy` / `outlook-sideline <anchor> on|off` CLI) |
+| Outlook adapter | in progress (classic Outlook: `ankd outlook-capture` / `outlook-open <anchor>` / `outlook-todos` / `outlook-complete <anchor>` / `outlook-blocks-sync` / `outlook-blocks-clear` / `outlook-busy` / `outlook-sideline <anchor> on|off` CLI; `ankd version` lists the commands of the build) |
 | Linux host (relay to OneNote in a Windows VM) | hub-side plumbing complete, install scripts shipped — see [`docs/plan-linux-port.md`](docs/plan-linux-port.md) |
 | macOS host (Apple Silicon, Chrome — JabRef fulltext only) | native build, no OneNote/VM; installer shipped, unexercised on hardware |
 
@@ -24,7 +24,7 @@ OneNote adapter provides. The architecture splits adapters out properly
 
 - `extension/` — browser extension (Manifest V3, runs in Firefox 121+
   and any Chromium browser)
-- `hub/` — Windows daemon (`ankd.exe`) and adapters (.NET 8)
+- `hub/` — Windows daemon (`ankd.exe`) and adapters (.NET 10)
 - `install/` — portable PowerShell installer (`install.ps1` for Firefox,
   `install-chrome.ps1` for Chromium-family browsers)
 
@@ -56,7 +56,7 @@ icon when there are multiple matches.
 | Tool | Version | Notes |
 |---|---|---|
 | Windows | 10 x64 or later | |
-| [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8) | 8.0+ | builds the daemon; the Windows installers auto-install it via winget if missing |
+| [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) | 10.0+ | builds the daemon; the Windows installers auto-install it via winget if missing |
 | Firefox | 121+ | needs MV3 `background.service_worker` support so the same manifest works in Chromium |
 | Chrome / Edge / Brave / Vivaldi | recent | any modern Chromium |
 | OneNote | Desktop app (Microsoft 365 or perpetual) | required for the OneNote adapter; launched automatically if not running |
@@ -73,7 +73,7 @@ only when that index has no hit.
 The Windows installers (`install.ps1`, `install-chrome.ps1`,
 `install-vm.ps1`) bootstrap their own build prerequisites through
 `install/ensure-prereqs.ps1`: if the .NET SDK is missing they install it
-with `winget` (`Microsoft.DotNet.SDK.8`), and they register the
+with `winget` (`Microsoft.DotNet.SDK.10`), and they register the
 `nuget.org` package source if it is absent — a freshly installed SDK has
 no source configured, so `dotnet restore` would otherwise fail with
 `NU1100`.
@@ -251,6 +251,18 @@ OK/Cancel-style buttons), and links to auth hosts (`login.*`,
 `https://login.tailscale.com/`) are skipped — these are never pasted
 reference URLs, so a marker beside them would be noise.
 
+### Backlinks on OneNote pages
+
+ContextSwitcher and koppter send `ankd onenote-backlinks-sync` the
+complete list of their tasks (and categories) that link to a OneNote page,
+together with their icon. `ankd` keeps a block of its own beside the title
+of each such page: one row per application, its icon followed by links
+back to the tasks. The content of the page does not move, and a block
+moved by hand stays where it was put. A done task is struck through; a deleted task or category
+loses its link, and the block goes when no link is left. The block carries
+a marker, so AnchorHub only ever rewrites its own. `--all` rewrites every
+block, e.g. after editing one by hand.
+
 ### Diagnostic CLI
 
 ```powershell
@@ -346,7 +358,7 @@ stall lookups.
 ## macOS (Apple Silicon, Chrome — JabRef fulltext only)
 
 macOS runs a **native** daemon — no OneNote, no Windows VM. The
-`net8.0` build omits the OneNote COM bridge entirely and serves only the
+`net10.0` build omits the OneNote COM bridge entirely and serves only the
 JabRef fulltext provider (and Microsoft Graph sign-in). OneNote
 anchor-lookup is Windows-only, so its actions return `DISCONNECTED`
 here.

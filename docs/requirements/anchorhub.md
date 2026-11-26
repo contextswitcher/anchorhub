@@ -2008,6 +2008,21 @@ is a possible future refinement if lazy detection proves insufficient.
 
 Needs: req
 
+### Version and commands
+`req~ank.cli.version~1`
+
+`ankd version` prints one line, `{"version": "…", "commands": […]}`, and
+exits 0, on every platform. `version` is the informational version of the
+build: the CalVer date `yyyy-MM-dd` for a release, `1.0.0` for a local
+build, each followed by `+<commit>` when the SDK knows the commit.
+`commands` lists `version` and the CLI commands that the build accepts:
+the OneNote and `outlook-*` commands on Windows, none besides `version`
+elsewhere. A caller such as koppter checks this list for the commands it
+needs; a build older than this command prints nothing, as it starts the
+native-messaging host on an unknown first argument.
+
+Needs: impl, utest
+
 ## JabRef Integration
 
 ### Fulltext PDF fetch
@@ -2108,11 +2123,11 @@ Needs: req
 `req~ank.platform.macos~1`
 
 The daemon runs natively on macOS (Apple Silicon, `osx-arm64`) with no
-OneNote and no Windows VM. The `net8.0` (non-`net8.0-windows`) build omits
+OneNote and no Windows VM. The `net10.0` (non-`net10.0-windows`) build omits
 the OneNote COM bridge entirely and starts the native-messaging host with a
 **null** OneNote backend: every OneNote-touching action returns
 `DISCONNECTED`, while the JabRef fulltext realm and Microsoft Graph
-sign-in — both platform-neutral `net8.0` code — are served normally. macOS
+sign-in — both platform-neutral `net10.0` code — are served normally. macOS
 is therefore a JabRef-fulltext-provider host, not an anchor-lookup host.
 
 Because native-messaging manifests cannot carry CLI arguments, the
@@ -2170,7 +2185,7 @@ ContextSwitcher tasks directory and reporting the first task whose
   file is skipped rather than failing the whole lookup.
 
 The action is pure file IO (no OneNote COM), so it is served by every
-daemon build, including the plain net8.0 forwarder target.
+daemon build, including the plain net10.0 forwarder target.
 
 Needs: impl, utest
 
@@ -2194,6 +2209,53 @@ state; when the adapter is disabled or the daemon is unreachable, the
 section is hidden.
 
 Needs: impl
+
+## OneNote Backlinks
+
+### Backlinks from other applications at the top of a OneNote page
+`req~ank.onenote.backlinks~2`
+
+`ankd onenote-backlinks-sync [--all]` reads one UTF-8 JSON object from
+stdin: `{"source": "<[a-z0-9-]+>", "name": "<display name>", "icon":
+"<Base64 PNG>", "links": [{"note": "onenote:…", "label": "…", "url":
+"<absolute URL>", "done": false}]}`. `name` defaults to `source`, `icon`
+may be left out, `done` defaults to false. The request is rejected as a
+whole (exit 1, `Error: …` on stderr, OneNote not contacted) when it is not
+of this form, a `note` is not an `onenote:` link, or `icon` is not a PNG
+of at most 64 KB.
+
+`links` is the complete set of the source: it replaces the set the source
+sent before. Links name the same page when they carry the same `page-id`
+(the title in the link may differ). Every page that a link of any source
+names carries one block of its own: an outline marked with the
+`one:Meta` `anchorhub-backlinks` that holds a borderless table with one
+row per source, ordered by name. The row holds the source's icon (12 pt,
+right-aligned, as OneNote keeps a column at least about 37 pt wide), or
+its name when it sent none, and then one hyperlink per link (`label` to
+`url`, struck through when `done`), open before done, then by label. A
+new block is created at the top of the title area (y = 14.4 pt), right
+of the title box (x = 36 pt + max(220 pt, 11 pt per character of the
+title) + 12 pt, at most 720 pt, as the page XML does not tell the width
+of the title): OneNote moves a new outline that overlaps the title box
+below it, and pushes the content of the page down when an outline that
+overlapped the title box, or was moved up over the content, is deleted. An
+existing block keeps its position, so the user may move it, and gets new
+content. When no link names a page any more, the block is deleted.
+Nothing else on the page changes, so the content of the page never moves.
+
+The links of all sources and a hash of the block last written to each
+page are kept in `%LOCALAPPDATA%\AnchorHub\onenote-backlinks.json`;
+OneNote is only contacted for pages whose block differs from the last
+written one, and `--all` rewrites the block of every known page (to
+repair one edited by hand). A page is found by the section of the link
+(its path, or its `section-id`) and the page whose own hyperlink carries
+the `page-id`. A page that cannot be found or written is reported in
+`failed` and tried again by the next run; a page that is gone needs no
+removal. Runs are serialised, so two applications may sync at the same
+time. On success, `ankd` prints `{"updated": n, "removed": n,
+"unchanged": n, "failed": [{"note", "error"}]}` and exits 0.
+
+Needs: impl, utest
 
 ## Outlook Integration
 

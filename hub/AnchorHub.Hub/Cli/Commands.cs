@@ -389,10 +389,110 @@ internal static class Commands
         return 0;
     }
 
+    /// <summary>Where the links each source last sent, and the line written to each page, are kept.</summary>
+    private static string BacklinkStatePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AnchorHub", "onenote-backlinks.json");
+
+    private static readonly System.Text.Json.JsonSerializerOptions StateJson = new() { WriteIndented = true };
+
+    // Reads the complete link set of one source from stdin and brings the
+    // backlink line of every affected OneNote page up to date. OneNote is
+    // only contacted when a line has to change.
+    // [impl->req~ank.onenote.backlinks~2]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public static int OneNoteBacklinksSync(string[] args)
+    {
+        var all = args.Contains("--all");
+        string json;
+        using (var reader = new StreamReader(Console.OpenStandardInput(), new System.Text.UTF8Encoding(false)))
+            json = reader.ReadToEnd();
+        BacklinkSyncRequest req;
+        try { req = OneNoteBacklinks.ParseSyncRequest(json); }
+        catch (FormatException ex) { return Usage($"invalid request: {ex.Message}"); }
+
+        // ContextSwitcher and koppter may sync at the same time; the state file is shared.
+        using var mutex = new Mutex(false, @"Local\AnchorHub.OneNoteBacklinks");
+        try { if (!mutex.WaitOne(TimeSpan.FromMinutes(2))) return Usage("another backlink sync is still running"); }
+        catch (AbandonedMutexException) { /* the other run died; its state file write is atomic */ }
+        try
+        {
+            var path = BacklinkStatePath;
+            var state = File.Exists(path)
+                ? System.Text.Json.JsonSerializer.Deserialize<BacklinkState>(File.ReadAllText(path)) ?? new BacklinkState()
+                : new BacklinkState();
+            var work = OneNoteBacklinks.Plan(state, req, all);
+
+            int updated = 0, removed = 0;
+            var failed = new System.Text.Json.Nodes.JsonArray();
+            if (work.Count > 0)
+            {
+                using var client = new OneNoteClient();
+                foreach (var w in work)
+                {
+                    try
+                    {
+                        var pageId = WriteBacklinks(client, state, w);
+                        OneNoteBacklinks.Done(state, w, pageId);
+                        if (w.Line is null) removed++; else updated++;
+                    }
+                    catch (Exception ex) when (ex is InvalidOperationException or FormatException or System.Xml.XmlException)
+                    {
+                        // The page state stays as it was, so the next sync tries again.
+                        failed.Add(new System.Text.Json.Nodes.JsonObject { ["note"] = w.Note, ["error"] = ex.Message });
+                    }
+                }
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var tmp = path + ".tmp";
+            File.WriteAllText(tmp, System.Text.Json.JsonSerializer.Serialize(state, StateJson));
+            File.Move(tmp, path, overwrite: true);
+
+            var touched = work.Select(w => w.Key).ToHashSet();
+            Console.WriteLine(new System.Text.Json.Nodes.JsonObject
+            {
+                ["updated"] = updated,
+                ["removed"] = removed,
+                ["unchanged"] = req.Links.Select(l => OneNoteBacklinks.Key(l.Note)).Distinct().Count(k => !touched.Contains(k)),
+                ["failed"] = failed,
+            }.ToJsonString());
+            return 0;
+        }
+        finally { mutex.ReleaseMutex(); }
+    }
+
+    // Returns the page ID written to (null when a removal found no page).
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private static string? WriteBacklinks(OneNoteClient client, BacklinkState state, BacklinkWork work)
+    {
+        var parts = OneNoteLinkParts.Parse(work.Note)
+            ?? throw new FormatException("not an onenote: link");
+        if (parts.PageGuid is null) throw new FormatException("the link names no page (no page-id)");
+
+        string? pageId = state.Pages.TryGetValue(work.Key, out var known) ? known.PageId : null;
+        var xml = pageId is null ? null : client.TryGetPage(pageId);
+        if (xml is null)
+        {
+            pageId = client.ResolveLink(parts);
+            xml = pageId is null ? null : client.TryGetPage(pageId);
+        }
+        if (xml is null)
+        {
+            // A deleted page has nothing left to clean up.
+            if (work.Line is null) return null;
+            throw new InvalidOperationException("OneNote does not know the page");
+        }
+
+        var edit = OneNoteBacklinks.Edit(xml, work.Line);
+        if (edit.DeleteObjectId is not null) client.DeleteContent(pageId!, edit.DeleteObjectId);
+        if (edit.UpdateXml is not null) client.UpdatePage(edit.UpdateXml);
+        return pageId;
+    }
+
     public static int Unknown(string cmd)
     {
         Console.Error.WriteLine($"Unknown command: {cmd}");
-        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url> | outlook-capture | outlook-open <anchor> | outlook-todos | outlook-complete <anchor> | outlook-blocks-sync (request on stdin) | outlook-blocks-clear [--dry-run] [--calendar <store>] | outlook-busy --from <date> --to <date> [--calendar <store>] | outlook-sideline <anchor> on|off");
+        Console.Error.WriteLine("Commands: lookup <url> | lookup-name <name…> | search-wsi <url> | outlook-capture | outlook-open <anchor> | outlook-todos | outlook-complete <anchor> | outlook-blocks-sync (request on stdin) | outlook-blocks-clear [--dry-run] [--calendar <store>] | outlook-busy --from <date> --to <date> [--calendar <store>] | outlook-sideline <anchor> on|off | onenote-backlinks-sync [--all] (request on stdin)");
         return 1;
     }
 }

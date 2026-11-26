@@ -12,7 +12,7 @@
 # the newly installed dotnet without the user reopening the terminal.
 #
 # It ensures, idempotently:
-#   1. A .NET SDK (major >= 8) is on PATH -- winget-installs SDK 8 if absent.
+#   1. A .NET SDK (major >= 10) is on PATH -- winget-installs SDK 10 if absent.
 #   2. A nuget.org package source is registered -- a fresh SDK has none, so
 #      'dotnet restore' otherwise fails with NU1100 (no source to resolve
 #      the runtime packs / NuGet packages from).
@@ -32,30 +32,30 @@ function Update-SessionPath {
 }
 
 function Test-DotnetSdk {
-    # True if a .NET SDK with major version >= 8 is available on PATH.
+    # True if a .NET SDK with major version >= 10 is available on PATH.
     if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { return $false }
     foreach ($line in (& dotnet --list-sdks 2>$null)) {
-        if ($line -match '^\s*(\d+)\.' -and [int]$Matches[1] -ge 8) { return $true }
+        if ($line -match '^\s*(\d+)\.' -and [int]$Matches[1] -ge 10) { return $true }
     }
     return $false
 }
 
-# --- 1. .NET SDK (>= 8) ------------------------------------------------------
+# --- 1. .NET SDK (>= 10) ------------------------------------------------------
 
 if (Test-DotnetSdk) {
-    Write-Host "[prereq] .NET SDK (>= 8) present."
+    Write-Host "[prereq] .NET SDK (>= 10) present."
 } else {
-    Write-Host "[prereq] .NET SDK 8 not found; installing via winget..."
+    Write-Host "[prereq] .NET SDK 10 not found; installing via winget..."
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        throw "Neither a .NET SDK (>= 8) nor winget is available. Install the SDK from https://dotnet.microsoft.com/download/dotnet/8.0 and re-run."
+        throw "Neither a .NET SDK (>= 10) nor winget is available. Install the SDK from https://dotnet.microsoft.com/download/dotnet/10.0 and re-run."
     }
-    winget install --id Microsoft.DotNet.SDK.8 --exact --source winget --silent `
+    winget install --id Microsoft.DotNet.SDK.10 --exact --source winget --silent `
         --accept-source-agreements --accept-package-agreements
     # Do NOT trust winget's exit code: it returns non-zero for benign cases
     # ('already installed', 'reboot suggested'). Re-detect the SDK instead.
     Update-SessionPath
     if (-not (Test-DotnetSdk)) {
-        throw "winget ran but no .NET SDK (>= 8) is detectable yet. Open a NEW terminal and re-run the installer, or install manually from https://dotnet.microsoft.com/download/dotnet/8.0."
+        throw "winget ran but no .NET SDK (>= 10) is detectable yet. Open a NEW terminal and re-run the installer, or install manually from https://dotnet.microsoft.com/download/dotnet/10.0."
     }
     Write-Host "[prereq] .NET SDK installed."
 }

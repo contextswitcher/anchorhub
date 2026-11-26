@@ -28,7 +28,7 @@ extension/          Firefox extension (manifest v3, background.js, popup.*)
 hub/
   AnchorHub.Core/          URL normaliser + per-host helpers, IOneNoteBackend (shared)
   AnchorHub.Core.Tests/    xUnit tests for Core
-  AnchorHub.Hub/           Daemon (.NET 8 / multi-target net8.0;net8.0-windows) → ankd
+  AnchorHub.Hub/           Daemon (.NET 10 / multi-target net10.0;net10.0-windows) → ankd
     Cli/Commands.cs            CLI entry points (lookup, lookup-name, search-wsi, outlook-*) — Windows-only
     Outlook/OutlookClient.cs   Classic Outlook COM via one-shot PowerShell — Windows-only
     NativeMessaging/
@@ -86,7 +86,7 @@ mode is used by the Windows-native install:
 
 ### PowerShell COM bridge (`OneNoteClient.cs`)
 
-.NET 8's COM interop cannot access Click-to-Run Office type libraries — they
+.NET's COM interop cannot access Click-to-Run Office type libraries — they
 live in a registry hive that is only visible to Office processes. Calling
 `InvokeMember` or casting to a `[ComImport]` interface both fail with
 `TYPE_E_LIBNOTREGISTERED`.

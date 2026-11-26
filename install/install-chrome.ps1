@@ -26,7 +26,7 @@ $ChromiumRegPaths = @(
   "HKCU:\SOFTWARE\Chromium\NativeMessagingHosts\$HostName"
 )
 
-# 0. Ensure build prerequisites: a .NET SDK (>= 8) and a nuget.org package
+# 0. Ensure build prerequisites: a .NET SDK (>= 10) and a nuget.org package
 #    source, winget-installing the SDK if it is missing.
 . (Join-Path $PSScriptRoot 'ensure-prereqs.ps1')
 
@@ -35,7 +35,7 @@ Write-Host "Publishing hub..."
 $hubProj = Join-Path $PSScriptRoot "..\hub\AnchorHub.Hub\AnchorHub.Hub.csproj"
 $publishOut  = Join-Path $PSScriptRoot "bin"
 dotnet publish $hubProj -c Release -r win-x64 --self-contained true `
-    -f net8.0-windows `
+    -f net10.0-windows `
     /p:PublishSingleFile=true `
     /p:IncludeNativeLibrariesForSelfExtract=true `
     -o $publishOut
