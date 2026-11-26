@@ -2227,21 +2227,22 @@ of at most 64 KB.
 `links` is the complete set of the source: it replaces the set the source
 sent before. Links name the same page when they carry the same `page-id`
 (the title in the link may differ). Every page that a link of any source
-names carries one paragraph: a borderless table with one row per source,
-ordered by name. The row holds the source's icon (12 pt), or its name
-when it sent none, and then one hyperlink per link (`label` to `url`,
-struck through when `done`), open before done, then by label. The
-paragraph is the first one of the topmost outline that is not one of
-OneMore's (it carries no `one:Meta`), or a new outline on a page without
-one; it is marked with the `one:Meta` `anchorhub-backlinks`, found again
-by that marker, and replaced as a whole when it changes. When no link
-names a page any more, the paragraph is deleted (and its outline, when it
-held nothing else). Nothing else on the page changes.
+names carries one block of its own: an outline marked with the
+`one:Meta` `anchorhub-backlinks` that holds a borderless table with one
+row per source, ordered by name. The row holds the source's icon (12 pt,
+right-aligned, as OneNote keeps a column at least about 37 pt wide), or
+its name when it sent none, and then one hyperlink per link (`label` to
+`url`, struck through when `done`), open before done, then by label. A
+new block stands at the height of the title (y = 36 pt), right of it
+(x estimated from the length of the title, between 360 and 720 pt); an
+existing block keeps its position, so the user may move it, and gets new
+content. When no link names a page any more, the block is deleted.
+Nothing else on the page changes, so the content of the page never moves.
 
-The links of all sources and a hash of the paragraph last written to each
+The links of all sources and a hash of the block last written to each
 page are kept in `%LOCALAPPDATA%\AnchorHub\onenote-backlinks.json`;
-OneNote is only contacted for pages whose paragraph differs from the last
-written one, and `--all` rewrites the paragraph of every known page (to
+OneNote is only contacted for pages whose block differs from the last
+written one, and `--all` rewrites the block of every known page (to
 repair one edited by hand). A page is found by the section of the link
 (its path, or its `section-id`) and the page whose own hyperlink carries
 the `page-id`. A page that cannot be found or written is reported in

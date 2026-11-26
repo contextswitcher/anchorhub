@@ -255,12 +255,13 @@ reference URLs, so a marker beside them would be noise.
 
 ContextSwitcher and koppter send `ankd onenote-backlinks-sync` the
 complete list of their tasks (and categories) that link to a OneNote page,
-together with their icon. `ankd` keeps one borderless table at the top of
-each such page: one row per application, its icon followed by links back
-to the tasks. A done task is struck through; a deleted task or category
-loses its link, and the table goes when no link is left. The table carries
+together with their icon. `ankd` keeps a block of its own beside the title
+of each such page: one row per application, its icon followed by links
+back to the tasks. The content of the page does not move, and a block
+moved by hand stays where it was put. A done task is struck through; a deleted task or category
+loses its link, and the block goes when no link is left. The block carries
 a marker, so AnchorHub only ever rewrites its own. `--all` rewrites every
-table, e.g. after editing one by hand.
+block, e.g. after editing one by hand.
 
 ### Diagnostic CLI
 

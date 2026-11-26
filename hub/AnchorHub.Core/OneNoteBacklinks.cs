@@ -84,11 +84,14 @@ public static class OneNoteBacklinks
 {
     public const string Namespace = "http://schemas.microsoft.com/office/onenote/2013/onenote";
 
-    /// <summary>The name of the <c>one:Meta</c> that marks the paragraph as AnchorHub's own.</summary>
+    /// <summary>The name of the <c>one:Meta</c> that marks the outline (the block) as AnchorHub's own.</summary>
     public const string Marker = "anchorhub-backlinks";
 
     /// <summary>The size of an icon on the page, in points.</summary>
     public const double IconSize = 12;
+
+    /// <summary>The width of the column with the links, in points; longer rows wrap.</summary>
+    public const double LinksWidth = 320;
 
     private const int MaxIconBytes = 64 * 1024;
     private static readonly XNamespace One = Namespace;
@@ -163,11 +166,10 @@ public static class OneNoteBacklinks
             .ToList();
         if (rows.Count == 0) return null;
         return new XElement(One + "OE",
-            new XElement(One + "Meta", new XAttribute("name", Marker), new XAttribute("content", "1")),
             new XElement(One + "Table", new XAttribute("bordersVisible", "false"),
                 new XElement(One + "Columns",
                     new XElement(One + "Column", new XAttribute("index", 0), new XAttribute("width", IconSize + 8), new XAttribute("isLocked", "true")),
-                    new XElement(One + "Column", new XAttribute("index", 1), new XAttribute("width", 480), new XAttribute("isLocked", "true"))),
+                    new XElement(One + "Column", new XAttribute("index", 1), new XAttribute("width", LinksWidth), new XAttribute("isLocked", "true"))),
                 rows));
     }
 
@@ -250,60 +252,58 @@ public static class OneNoteBacklinks
 
     /// <summary>
     /// Computes the change to a page (its XML from <c>GetPageContent</c>) that makes its backlink
-    /// paragraph <paramref name="line"/>, or removes it when <paramref name="line"/> is null. The
-    /// paragraph replaces the marked one, or becomes the first paragraph of the topmost outline that is
-    /// not one of OneMore's own (those carry a <c>one:Meta</c>); a page without such an outline gets a
-    /// new one. The update carries only the page ID and the one outline that holds the paragraph, as
-    /// OneNote leaves the outlines a page update does not name as they are; within that outline, a
-    /// paragraph left out is deleted (DeletePageContent refuses single paragraphs).
+    /// block hold <paramref name="line"/>, or removes the block when <paramref name="line"/> is null.
+    /// The block is an outline of its own, marked with the <c>one:Meta</c> <see cref="Marker"/>, so that
+    /// the content of the page never moves. A new block stands at the height of the title, to the right
+    /// of it; an existing one keeps its position (the user may have moved it) and gets new content. The
+    /// update carries only the page ID and that outline: OneNote leaves the outlines a page update does
+    /// not name as they are.
     /// </summary>
     public static BacklinkEdit Edit(string pageXml, string? line)
     {
         var doc = XDocument.Parse(pageXml);
         var page = doc.Root ?? throw new FormatException("empty page XML");
-        var existing = page.Descendants(One + "OE").FirstOrDefault(IsMarked);
+        var existing = page.Elements(One + "Outline").FirstOrDefault(IsMarked);
 
-        XElement outline;
         if (line is null)
         {
-            if (existing is null) return BacklinkEdit.None;
-            outline = existing.Ancestors(One + "Outline").First();
-            existing.Remove();
-            if (!outline.Descendants(One + "OE").Any())
-                return new BacklinkEdit(null, outline.Attribute("objectID")?.Value);
+            var id = existing?.Attribute("objectID")?.Value;
+            return id is null ? BacklinkEdit.None : new BacklinkEdit(null, id);
         }
-        else
-        {
-            var fresh = XElement.Parse(line);
-            if (existing is not null)
-            {
-                outline = existing.Ancestors(One + "Outline").First();
-                existing.ReplaceWith(fresh);
-            }
-            else
-            {
-                outline = page.Elements(One + "Outline")
-                    .Where(o => !o.Elements(One + "Meta").Any() && o.Element(One + "OEChildren") is not null)
-                    .OrderBy(Top)
-                    .FirstOrDefault()
-                    ?? new XElement(One + "Outline", new XElement(One + "OEChildren"));
-                outline.Element(One + "OEChildren")!.AddFirst(fresh);
-            }
-        }
+
+        var outline = new XElement(One + "Outline");
+        if (existing?.Attribute("objectID") is { } objectId) outline.Add(new XAttribute(objectId));
+        outline.Add(
+            existing?.Element(One + "Position") is { } position
+                ? new XElement(position)
+                : new XElement(One + "Position",
+                    new XAttribute("x", Fmt(BlockLeft(page))), new XAttribute("y", Fmt(BlockTop)), new XAttribute("z", 0)),
+            new XElement(One + "Meta", new XAttribute("name", Marker), new XAttribute("content", "1")),
+            new XElement(One + "OEChildren", XElement.Parse(line)));
 
         var update = new XElement(One + "Page",
             new XAttribute(XNamespace.Xmlns + "one", Namespace),
             new XAttribute("ID", page.Attribute("ID")?.Value ?? throw new FormatException("page without ID")),
-            new XElement(outline));
+            outline);
         return new BacklinkEdit(update.ToString(SaveOptions.DisableFormatting), null);
     }
 
-    private static bool IsMarked(XElement oe) =>
-        oe.Elements(One + "Meta").Any(m => m.Attribute("name")?.Value == Marker);
+    /// <summary>The top of a new block: the height of the page title.</summary>
+    public const double BlockTop = 36;
 
-    private static double Top(XElement outline) =>
-        double.TryParse(outline.Element(One + "Position")?.Attribute("y")?.Value,
-            System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var y)
-            ? y
-            : double.MaxValue;
+    /// <summary>
+    /// The left edge of a new block: right of the title, estimated from its length (the page XML does
+    /// not tell the width of the title), at least 360 pt and at most 720 pt from the left.
+    /// </summary>
+    public static double BlockLeft(XElement page)
+    {
+        var title = string.Concat(page.Element(One + "Title")?.Descendants(One + "T").Select(t => t.Value) ?? []);
+        var text = WebUtility.HtmlDecode(Regex.Replace(title, "<[^>]*>", ""));
+        return Math.Clamp(36 + text.Length * 11 + 48, 360, 720);
+    }
+
+    private static string Fmt(double v) => v.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private static bool IsMarked(XElement outline) =>
+        outline.Elements(One + "Meta").Any(m => m.Attribute("name")?.Value == Marker);
 }
