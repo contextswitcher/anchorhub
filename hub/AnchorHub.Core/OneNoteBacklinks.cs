@@ -1,4 +1,6 @@
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -10,7 +12,8 @@ namespace AnchorHub.Core;
 public sealed record Backlink(string Note, string Label, string Url, bool Done);
 
 /// <summary>The validated stdin request of <c>ankd onenote-backlinks-sync</c>.</summary>
-public sealed record BacklinkSyncRequest(string Source, string Name, IReadOnlyList<Backlink> Links);
+/// <param name="Icon">The application's icon as a Base64 PNG, or null.</param>
+public sealed record BacklinkSyncRequest(string Source, string Name, string? Icon, IReadOnlyList<Backlink> Links);
 
 /// <summary>The parts of an <c>onenote:</c> page link that find the page again.</summary>
 public sealed record OneNoteLinkParts(string SectionPath, string? SectionGuid, string? PageGuid)
@@ -38,14 +41,14 @@ public sealed record OneNoteLinkParts(string SectionPath, string? SectionGuid, s
 
 /// <summary>What has to be sent to OneNote to bring the backlink line of a page up to date.</summary>
 /// <param name="UpdateXml">A page XML for <c>UpdatePageContent</c>, or null.</param>
-/// <param name="DeleteObjectId">The object ID of the line to remove with <c>DeletePageContent</c>, or null.</param>
+/// <param name="DeleteObjectId">An outline to remove with <c>DeletePageContent</c> (it held only the line), or null.</param>
 public sealed record BacklinkEdit(string? UpdateXml, string? DeleteObjectId)
 {
     public static readonly BacklinkEdit None = new(null, null);
 }
 
-/// <summary>A page whose backlink line has to change: <see cref="Html"/> null removes the line.</summary>
-public sealed record BacklinkWork(string Key, string Note, string? Html);
+/// <summary>A page whose backlink line has to change: <see cref="Line"/> (the paragraph XML) null removes it.</summary>
+public sealed record BacklinkWork(string Key, string Note, string? Line);
 
 /// <summary>The links each source last sent, and the line last written to each page.</summary>
 public sealed class BacklinkState
@@ -57,6 +60,7 @@ public sealed class BacklinkState
 public sealed class BacklinkSource
 {
     public string Name { get; set; } = "";
+    public string? Icon { get; set; }
     public List<Backlink> Links { get; set; } = [];
 }
 
@@ -64,32 +68,39 @@ public sealed class BacklinkPage
 {
     public string Note { get; set; } = "";
     public string? PageId { get; set; }
-    public string Html { get; set; } = "";
+
+    /// <summary>SHA-256 of the line last written, so that an unchanged line is not written again.</summary>
+    public string? Hash { get; set; }
 }
 
 /// <summary>
-/// The decisions behind the backlink line at the top of a OneNote page: one line of links back to
-/// the tasks and categories of other applications that link to the page. Each application sends
-/// its complete set; a link it no longer sends disappears from the page. Everything except the COM
-/// calls lives here, so it is unit tested.
+/// The decisions behind the backlink line at the top of a OneNote page: a borderless table with one
+/// row per application — its icon, then its links back to the tasks and categories that link to the
+/// page. Each application sends its complete set; a link it no longer sends disappears from the
+/// page. Everything except the COM calls lives here, so it is unit tested.
 /// </summary>
-// [impl->req~ank.onenote.backlinks~1]
+// [impl->req~ank.onenote.backlinks~2]
 public static class OneNoteBacklinks
 {
     public const string Namespace = "http://schemas.microsoft.com/office/onenote/2013/onenote";
 
-    /// <summary>The name of the <c>one:Meta</c> that marks the line as AnchorHub's own.</summary>
+    /// <summary>The name of the <c>one:Meta</c> that marks the paragraph as AnchorHub's own.</summary>
     public const string Marker = "anchorhub-backlinks";
 
+    /// <summary>The size of an icon on the page, in points.</summary>
+    public const double IconSize = 12;
+
+    private const int MaxIconBytes = 64 * 1024;
     private static readonly XNamespace One = Namespace;
     private static readonly Regex SourceId = new("^[a-z0-9-]+$", RegexOptions.CultureInvariant);
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
     /// <summary>The page a link names: its page GUID, else the whole link (a link without a page-id).</summary>
     public static string Key(string note) =>
         OneNoteLinkParts.Parse(note)?.PageGuid ?? note.Trim();
 
     /// <summary>
-    /// Parses <c>{"source": "koppter", "name": "koppter", "links": [{"note", "label", "url", "done"}]}</c>.
+    /// Parses <c>{"source": "koppter", "name": "koppter", "icon": "&lt;Base64 PNG&gt;", "links": [{"note", "label", "url", "done"}]}</c>.
     /// The request is rejected as a whole when it is not of this form.
     /// </summary>
     public static BacklinkSyncRequest ParseSyncRequest(string json)
@@ -101,6 +112,8 @@ public static class OneNoteBacklinks
         var source = Text(root, "source");
         if (!SourceId.IsMatch(source)) throw new FormatException("source must match [a-z0-9-]+");
         var name = root["name"] is null ? source : Text(root, "name");
+        var icon = root["icon"] is null ? null : Text(root, "icon");
+        if (icon is not null) CheckIcon(icon);
         if (root["links"] is not JsonArray array) throw new FormatException("links must be an array");
 
         var links = new List<Backlink>();
@@ -119,7 +132,16 @@ public static class OneNoteBacklinks
             };
             links.Add(new Backlink(note.Trim(), Text(o, "label"), url, done));
         }
-        return new BacklinkSyncRequest(source, name, links);
+        return new BacklinkSyncRequest(source, name, icon, links);
+    }
+
+    private static void CheckIcon(string icon)
+    {
+        byte[] bytes;
+        try { bytes = Convert.FromBase64String(icon); }
+        catch (FormatException) { throw new FormatException("icon must be Base64"); }
+        if (bytes.Length > MaxIconBytes) throw new FormatException($"icon must be at most {MaxIconBytes} bytes");
+        if (!bytes.AsSpan().StartsWith(PngSignature)) throw new FormatException("icon must be a PNG");
     }
 
     private static string Text(JsonObject o, string key) =>
@@ -128,27 +150,54 @@ public static class OneNoteBacklinks
             : throw new FormatException($"{key} must be a non-empty string");
 
     /// <summary>
-    /// The HTML of the line for the links of all sources to one page, or null when there are none.
-    /// Sources are ordered by name, links by open before done, then by label, so that the same set
-    /// gives the same line.
+    /// The paragraph that carries the links of all sources to one page, or null when there are none:
+    /// a borderless table with one row per source (ordered by name) — the source's icon, or its name
+    /// when it sent none, then its links (open before done, then by label; done ones struck through).
     /// </summary>
-    public static string? Render(IEnumerable<(string Name, Backlink Link)> links)
+    public static XElement? Line(IEnumerable<(BacklinkSource Source, Backlink Link)> links)
     {
-        var parts = links
-            .OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(l => l.Link.Done)
-            .ThenBy(l => l.Link.Label, StringComparer.CurrentCultureIgnoreCase)
-            .ThenBy(l => l.Link.Url, StringComparer.Ordinal)
+        var rows = links
+            .GroupBy(l => l.Source)
+            .OrderBy(g => g.Key.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => Row(g.Key, g.Select(l => l.Link)))
+            .ToList();
+        if (rows.Count == 0) return null;
+        return new XElement(One + "OE",
+            new XElement(One + "Meta", new XAttribute("name", Marker), new XAttribute("content", "1")),
+            new XElement(One + "Table", new XAttribute("bordersVisible", "false"),
+                new XElement(One + "Columns",
+                    new XElement(One + "Column", new XAttribute("index", 0), new XAttribute("width", IconSize + 8), new XAttribute("isLocked", "true")),
+                    new XElement(One + "Column", new XAttribute("index", 1), new XAttribute("width", 480), new XAttribute("isLocked", "true"))),
+                rows));
+    }
+
+    private static XElement Row(BacklinkSource source, IEnumerable<Backlink> links)
+    {
+        var html = string.Join(" · ", links
+            .OrderBy(l => l.Done)
+            .ThenBy(l => l.Label, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(l => l.Url, StringComparer.Ordinal)
             .Select(l =>
             {
-                var text = WebUtility.HtmlEncode($"{l.Name}: {l.Link.Label}");
-                if (l.Link.Done) text = $"<span style='text-decoration:line-through'>{text}</span>";
-                return $"<a href=\"{WebUtility.HtmlEncode(l.Link.Url)}\">{text}</a>";
+                var text = WebUtility.HtmlEncode(l.Label);
+                if (l.Done) text = $"<span style='text-decoration:line-through'>{text}</span>";
+                return $"<a href=\"{WebUtility.HtmlEncode(l.Url)}\">{text}</a>";
             })
-            .Distinct()
-            .ToList();
-        return parts.Count == 0 ? null : "↩ " + string.Join(" · ", parts);
+            .Distinct());
+        var badge = source.Icon is null
+            ? new XElement(One + "T", new XCData(WebUtility.HtmlEncode(source.Name)))
+            : new XElement(One + "Image", new XAttribute("format", "png"),
+                new XElement(One + "Size", new XAttribute("width", IconSize), new XAttribute("height", IconSize), new XAttribute("isSetByUser", "true")),
+                new XElement(One + "Data", source.Icon));
+        // OneNote keeps a column at least about 37 pt wide; aligned right, the icon sits next to its links.
+        return new XElement(One + "Row",
+            Cell(badge, "right"),
+            Cell(new XElement(One + "T", new XCData(html)), "left"));
     }
+
+    private static XElement Cell(XElement content, string alignment) =>
+        new(One + "Cell", new XElement(One + "OEChildren",
+            new XElement(One + "OE", new XAttribute("alignment", alignment), content)));
 
     /// <summary>
     /// Replaces the links of <paramref name="request"/>'s source in <paramref name="state"/> and returns
@@ -159,7 +208,11 @@ public static class OneNoteBacklinks
     {
         var keys = new HashSet<string>(StringComparer.Ordinal);
         if (state.Sources.TryGetValue(request.Source, out var old))
+        {
             keys.UnionWith(old.Links.Select(l => Key(l.Note)));
+            // A new icon or name changes every line of the source.
+            if (old.Icon != request.Icon || old.Name != request.Name) keys.UnionWith(request.Links.Select(l => Key(l.Note)));
+        }
         keys.UnionWith(request.Links.Select(l => Key(l.Note)));
         if (all)
         {
@@ -167,68 +220,75 @@ public static class OneNoteBacklinks
             keys.UnionWith(state.Sources.Values.SelectMany(s => s.Links).Select(l => Key(l.Note)));
         }
 
-        state.Sources[request.Source] = new BacklinkSource { Name = request.Name, Links = request.Links.ToList() };
+        state.Sources[request.Source] = new BacklinkSource { Name = request.Name, Icon = request.Icon, Links = request.Links.ToList() };
 
         var work = new List<BacklinkWork>();
         foreach (var key in keys.Order(StringComparer.Ordinal))
         {
             var linked = state.Sources.Values
-                .SelectMany(s => s.Links.Where(l => Key(l.Note) == key).Select(l => (s.Name, Link: l)))
+                .SelectMany(s => s.Links.Where(l => Key(l.Note) == key).Select(l => (Source: s, Link: l)))
                 .ToList();
-            var html = Render(linked);
+            var line = Line(linked)?.ToString(SaveOptions.DisableFormatting);
             state.Pages.TryGetValue(key, out var page);
-            if (!all && (page?.Html ?? (string?)null) == html) continue;
-            if (html is null && page is null) continue;
+            if (line is null && page is null) continue;
+            if (!all && page?.Hash == Hash(line)) continue;
             var note = linked.Count > 0 ? linked[0].Link.Note : page!.Note;
-            work.Add(new BacklinkWork(key, note, html));
+            work.Add(new BacklinkWork(key, note, line));
         }
         return work;
     }
 
+    private static string? Hash(string? line) =>
+        line is null ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(line)));
+
     /// <summary>Records in <paramref name="state"/> that <paramref name="work"/> was written to <paramref name="pageId"/>.</summary>
     public static void Done(BacklinkState state, BacklinkWork work, string? pageId)
     {
-        if (work.Html is null) state.Pages.Remove(work.Key);
-        else state.Pages[work.Key] = new BacklinkPage { Note = work.Note, PageId = pageId, Html = work.Html };
+        if (work.Line is null) state.Pages.Remove(work.Key);
+        else state.Pages[work.Key] = new BacklinkPage { Note = work.Note, PageId = pageId, Hash = Hash(work.Line) };
     }
 
     /// <summary>
-    /// Computes the change to a page (its XML from <c>GetPageContent</c>) that makes its backlink line
-    /// <paramref name="html"/>, or removes the line when <paramref name="html"/> is null. A new line
-    /// becomes the first paragraph of the topmost outline that is not one of OneMore's own (those carry
-    /// a <c>one:Meta</c>); a page without such an outline gets a new one. Nothing else on the page is
-    /// touched: the update carries only the page ID and the one outline that holds the line.
+    /// Computes the change to a page (its XML from <c>GetPageContent</c>) that makes its backlink
+    /// paragraph <paramref name="line"/>, or removes it when <paramref name="line"/> is null. The
+    /// paragraph replaces the marked one, or becomes the first paragraph of the topmost outline that is
+    /// not one of OneMore's own (those carry a <c>one:Meta</c>); a page without such an outline gets a
+    /// new one. The update carries only the page ID and the one outline that holds the paragraph, as
+    /// OneNote leaves the outlines a page update does not name as they are; within that outline, a
+    /// paragraph left out is deleted (DeletePageContent refuses single paragraphs).
     /// </summary>
-    public static BacklinkEdit Edit(string pageXml, string? html)
+    public static BacklinkEdit Edit(string pageXml, string? line)
     {
         var doc = XDocument.Parse(pageXml);
         var page = doc.Root ?? throw new FormatException("empty page XML");
         var existing = page.Descendants(One + "OE").FirstOrDefault(IsMarked);
 
-        if (html is null)
-        {
-            var id = existing?.Attribute("objectID")?.Value;
-            return id is null ? BacklinkEdit.None : new BacklinkEdit(null, id);
-        }
-
         XElement outline;
-        if (existing is not null)
+        if (line is null)
         {
+            if (existing is null) return BacklinkEdit.None;
             outline = existing.Ancestors(One + "Outline").First();
-            existing.Elements(One + "T").Remove();
-            existing.Add(new XElement(One + "T", new XCData(html)));
+            existing.Remove();
+            if (!outline.Descendants(One + "OE").Any())
+                return new BacklinkEdit(null, outline.Attribute("objectID")?.Value);
         }
         else
         {
-            var line = new XElement(One + "OE",
-                new XElement(One + "Meta", new XAttribute("name", Marker), new XAttribute("content", "1")),
-                new XElement(One + "T", new XCData(html)));
-            outline = page.Elements(One + "Outline")
-                .Where(o => !o.Elements(One + "Meta").Any() && o.Element(One + "OEChildren") is not null)
-                .OrderBy(Top)
-                .FirstOrDefault()
-                ?? new XElement(One + "Outline", new XElement(One + "OEChildren"));
-            outline.Element(One + "OEChildren")!.AddFirst(line);
+            var fresh = XElement.Parse(line);
+            if (existing is not null)
+            {
+                outline = existing.Ancestors(One + "Outline").First();
+                existing.ReplaceWith(fresh);
+            }
+            else
+            {
+                outline = page.Elements(One + "Outline")
+                    .Where(o => !o.Elements(One + "Meta").Any() && o.Element(One + "OEChildren") is not null)
+                    .OrderBy(Top)
+                    .FirstOrDefault()
+                    ?? new XElement(One + "Outline", new XElement(One + "OEChildren"));
+                outline.Element(One + "OEChildren")!.AddFirst(fresh);
+            }
         }
 
         var update = new XElement(One + "Page",

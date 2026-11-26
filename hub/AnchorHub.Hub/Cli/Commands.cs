@@ -398,7 +398,7 @@ internal static class Commands
     // Reads the complete link set of one source from stdin and brings the
     // backlink line of every affected OneNote page up to date. OneNote is
     // only contacted when a line has to change.
-    // [impl->req~ank.onenote.backlinks~1]
+    // [impl->req~ank.onenote.backlinks~2]
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public static int OneNoteBacklinksSync(string[] args)
     {
@@ -433,7 +433,7 @@ internal static class Commands
                     {
                         var pageId = WriteBacklinks(client, state, w);
                         OneNoteBacklinks.Done(state, w, pageId);
-                        if (w.Html is null) removed++; else updated++;
+                        if (w.Line is null) removed++; else updated++;
                     }
                     catch (Exception ex) when (ex is InvalidOperationException or FormatException or System.Xml.XmlException)
                     {
@@ -479,11 +479,11 @@ internal static class Commands
         if (xml is null)
         {
             // A deleted page has nothing left to clean up.
-            if (work.Html is null) return null;
+            if (work.Line is null) return null;
             throw new InvalidOperationException("OneNote does not know the page");
         }
 
-        var edit = OneNoteBacklinks.Edit(xml, work.Html);
+        var edit = OneNoteBacklinks.Edit(xml, work.Line);
         if (edit.DeleteObjectId is not null) client.DeleteContent(pageId!, edit.DeleteObjectId);
         if (edit.UpdateXml is not null) client.UpdatePage(edit.UpdateXml);
         return pageId;

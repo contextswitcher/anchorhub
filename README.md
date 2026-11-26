@@ -254,13 +254,13 @@ reference URLs, so a marker beside them would be noise.
 ### Backlinks on OneNote pages
 
 ContextSwitcher and koppter send `ankd onenote-backlinks-sync` the
-complete list of their tasks (and categories) that link to a OneNote page.
-`ankd` keeps one line at the top of each such page, `↩ ContextSwitcher:
-Fix NPE · koppter: Call the dentist`, each entry a link back into the
-application. A done task is struck through; a deleted task or category
-loses its entry, and the line goes when no entry is left. The line carries
-a marker, so AnchorHub only ever rewrites its own line. `--all` rewrites
-every line, e.g. after editing one by hand.
+complete list of their tasks (and categories) that link to a OneNote page,
+together with their icon. `ankd` keeps one borderless table at the top of
+each such page: one row per application, its icon followed by links back
+to the tasks. A done task is struck through; a deleted task or category
+loses its link, and the table goes when no link is left. The table carries
+a marker, so AnchorHub only ever rewrites its own. `--all` rewrites every
+table, e.g. after editing one by hand.
 
 ### Diagnostic CLI
 

@@ -10,7 +10,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 ### Added
 
 - `ankd version` prints the version of the build and the commands it accepts as one JSON line, so that koppter can tell whether this AnchorHub has the commands it needs; the release binaries carry their release date as version.
-- `ankd onenote-backlinks-sync` writes a line of links back to the ContextSwitcher and koppter tasks that link to a OneNote page at the top of that page: done tasks are struck through, and the link of a deleted task or category disappears.
+- `ankd onenote-backlinks-sync` keeps links back to the ContextSwitcher and koppter tasks that link to a OneNote page at the top of that page, one row per application with its icon: done tasks are struck through, and the link of a deleted task or category disappears.
 
 ### Fixed
 
