@@ -42,9 +42,7 @@ public sealed record OneNoteLinkParts(string SectionPath, string? SectionGuid, s
 /// <summary>What has to be sent to OneNote to bring the backlink line of a page up to date.</summary>
 /// <param name="UpdateXml">A page XML for <c>UpdatePageContent</c>, or null.</param>
 /// <param name="DeleteObjectId">An outline to remove with <c>DeletePageContent</c> (it held only the line), or null.</param>
-/// <param name="Created">True when the update creates the block below everything else; it is then put
-/// in place by <see cref="OneNoteBacklinks.Place"/>.</param>
-public sealed record BacklinkEdit(string? UpdateXml, string? DeleteObjectId, bool Created = false)
+public sealed record BacklinkEdit(string? UpdateXml, string? DeleteObjectId)
 {
     public static readonly BacklinkEdit None = new(null, null);
 }
@@ -256,9 +254,8 @@ public static class OneNoteBacklinks
     /// Computes the change to a page (its XML from <c>GetPageContent</c>) that makes its backlink
     /// block hold <paramref name="line"/>, or removes the block when <paramref name="line"/> is null.
     /// The block is an outline of its own, marked with the <c>one:Meta</c> <see cref="Marker"/>, so that
-    /// the content of the page never moves. A new block is created below everything else and then put
-    /// beside the title by <see cref="Place"/>; an existing one keeps its position (the user may have
-    /// moved it) and gets new content. The
+    /// the content of the page never moves. A new block is created in its place beside the title; an
+    /// existing one keeps its position (the user may have moved it) and gets new content. The
     /// update carries only the page ID and that outline: OneNote leaves the outlines a page update does
     /// not name as they are.
     /// </summary>
@@ -280,7 +277,7 @@ public static class OneNoteBacklinks
             existing?.Element(One + "Position") is { } position
                 ? new XElement(position)
                 : new XElement(One + "Position",
-                    new XAttribute("x", 36), new XAttribute("y", Fmt(Bottom(page) + 36)), new XAttribute("z", 0)),
+                    new XAttribute("x", Fmt(BlockLeft(page))), new XAttribute("y", Fmt(BlockTop)), new XAttribute("z", 0)),
             new XElement(One + "Meta", new XAttribute("name", Marker), new XAttribute("content", "1")),
             new XElement(One + "OEChildren", XElement.Parse(line)));
 
@@ -288,60 +285,25 @@ public static class OneNoteBacklinks
             new XAttribute(XNamespace.Xmlns + "one", Namespace),
             new XAttribute("ID", page.Attribute("ID")?.Value ?? throw new FormatException("page without ID")),
             outline);
-        return new BacklinkEdit(update.ToString(SaveOptions.DisableFormatting), null, Created: existing is null);
+        return new BacklinkEdit(update.ToString(SaveOptions.DisableFormatting), null);
     }
-
-    /// <summary>
-    /// The update that moves a block just created (page XML read after the creation) to its place
-    /// beside the title, or null when it stands there already. Moving an existing outline over the
-    /// title area pushes nothing aside.
-    /// </summary>
-    public static string? Place(string pageXml)
-    {
-        var page = XDocument.Parse(pageXml).Root ?? throw new FormatException("empty page XML");
-        var outline = page.Elements(One + "Outline").FirstOrDefault(IsMarked);
-        var position = outline?.Element(One + "Position");
-        if (outline is null || position is null) return null;
-        var x = BlockLeft(page);
-        if (Math.Abs(Coordinate(position, "x") - x) < 0.5 && Math.Abs(Coordinate(position, "y") - BlockTop) < 0.5) return null;
-        position.SetAttributeValue("x", Fmt(x));
-        position.SetAttributeValue("y", Fmt(BlockTop));
-        return new XElement(One + "Page",
-            new XAttribute(XNamespace.Xmlns + "one", Namespace),
-            new XAttribute("ID", page.Attribute("ID")!.Value),
-            new XElement(outline)).ToString(SaveOptions.DisableFormatting);
-    }
-
-    private static double Coordinate(XElement position, string name) =>
-        double.TryParse(position.Attribute(name)?.Value, System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : double.NaN;
-
-    /// <summary>
-    /// The bottom of the lowest outline. A new block is created below it, where it collides with
-    /// nothing: OneNote moves a new outline that overlaps the title down, and pushes the outlines it
-    /// then overlaps further down, which would move the content of the page.
-    /// </summary>
-    private static double Bottom(XElement page) =>
-        page.Elements(One + "Outline")
-            .Select(o => (o.Element(One + "Position") is { } p ? Coordinate(p, "y") : double.NaN)
-                       + (o.Element(One + "Size") is { } z ? Coordinate(z, "height") : 0))
-            .Where(v => !double.IsNaN(v))
-            .DefaultIfEmpty(86.4)
-            .Max();
 
     /// <summary>The top of a block in its place: the top edge of the title area.</summary>
     public const double BlockTop = 14.4;
 
     /// <summary>
-    /// The left edge of a new block: just right of the title, estimated from its length (the page XML
-    /// does not tell the width of the title). The title box starts at 36 pt and is at least about
-    /// 190 pt wide; a character of the title takes about 10 pt. At most 720 pt from the left.
+    /// The left edge of a new block: right of the title box, estimated from the length of the title
+    /// (the page XML does not tell its width): the box starts at 36 pt and is at least about 220 pt
+    /// wide; a character takes up to about 11 pt; 12 pt of margin. At most 720 pt from the left.
+    /// The block must not overlap the title box: OneNote moves such a new outline below the title,
+    /// and when an outline that overlapped the title box is deleted, OneNote pushes the content of
+    /// the page down (both seen in live tests; so is a block that was moved up from below).
     /// </summary>
     public static double BlockLeft(XElement page)
     {
         var title = string.Concat(page.Element(One + "Title")?.Descendants(One + "T").Select(t => t.Value) ?? []);
         var text = WebUtility.HtmlDecode(Regex.Replace(title, "<[^>]*>", ""));
-        return Math.Min(36 + Math.Max(190, text.Length * 10) + 8, 720);
+        return Math.Min(36 + Math.Max(220, text.Length * 11) + 12, 720);
     }
 
     private static string Fmt(double v) => v.ToString(System.Globalization.CultureInfo.InvariantCulture);

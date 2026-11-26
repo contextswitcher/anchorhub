@@ -486,8 +486,6 @@ internal static class Commands
         var edit = OneNoteBacklinks.Edit(xml, work.Line);
         if (edit.DeleteObjectId is not null) client.DeleteContent(pageId!, edit.DeleteObjectId);
         if (edit.UpdateXml is not null) client.UpdatePage(edit.UpdateXml);
-        if (edit.Created && client.TryGetPage(pageId!) is { } created && OneNoteBacklinks.Place(created) is { } place)
-            client.UpdatePage(place);
         return pageId;
     }
 
