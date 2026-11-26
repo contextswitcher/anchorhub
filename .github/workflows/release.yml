@@ -67,7 +67,7 @@ jobs:
 
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       # Every release tag that has no binaries yet, not only the tag of this run,
       # so that the next run makes up for a run that failed.
@@ -86,7 +86,7 @@ jobs:
             out="$RUNNER_TEMP/assets-$d"
             mkdir -p "$out"
             # The Windows build carries the COM bridges; Linux and macOS get the forwarder build.
-            for target in win-x64:net8.0-windows linux-x64:net8.0 osx-arm64:net8.0; do
+            for target in win-x64:net10.0-windows linux-x64:net10.0 osx-arm64:net10.0; do
               rid=${target%%:*}
               dotnet publish hub/AnchorHub.Hub/AnchorHub.Hub.csproj -c Release -r "$rid" -f "${target#*:}" \
                 --self-contained true -p:PublishSingleFile=true -p:EnableWindowsTargeting=true \

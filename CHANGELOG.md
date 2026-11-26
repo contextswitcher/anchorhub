@@ -14,7 +14,11 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 ### Fixed
 
-- `just install` no longer warns that System.Data.OleDb does not support net8.0-windows.
+- `just install` no longer warns that System.Data.OleDb does not support the target framework.
+
+### Changed
+
+- Building AnchorHub needs the .NET 10 SDK; the Windows installers install it via winget if missing.
 
 [Unreleased]: https://github.com/contextswitcher/anchorhub/compare/v2026-11-19...HEAD
 

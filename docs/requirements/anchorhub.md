@@ -2123,11 +2123,11 @@ Needs: req
 `req~ank.platform.macos~1`
 
 The daemon runs natively on macOS (Apple Silicon, `osx-arm64`) with no
-OneNote and no Windows VM. The `net8.0` (non-`net8.0-windows`) build omits
+OneNote and no Windows VM. The `net10.0` (non-`net10.0-windows`) build omits
 the OneNote COM bridge entirely and starts the native-messaging host with a
 **null** OneNote backend: every OneNote-touching action returns
 `DISCONNECTED`, while the JabRef fulltext realm and Microsoft Graph
-sign-in — both platform-neutral `net8.0` code — are served normally. macOS
+sign-in — both platform-neutral `net10.0` code — are served normally. macOS
 is therefore a JabRef-fulltext-provider host, not an anchor-lookup host.
 
 Because native-messaging manifests cannot carry CLI arguments, the
@@ -2185,7 +2185,7 @@ ContextSwitcher tasks directory and reporting the first task whose
   file is skipped rather than failing the whole lookup.
 
 The action is pure file IO (no OneNote COM), so it is served by every
-daemon build, including the plain net8.0 forwarder target.
+daemon build, including the plain net10.0 forwarder target.
 
 Needs: impl, utest
 

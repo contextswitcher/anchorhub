@@ -52,7 +52,7 @@ $RunValueName  = "AnchorHubListener"
 
 # ── Prereqs ───────────────────────────────────────────────────────────────────
 
-# Ensure a .NET SDK (>= 8) and a nuget.org package source. Dot-sourced
+# Ensure a .NET SDK (>= 10) and a nuget.org package source. Dot-sourced
 # (not '&') so a winget SDK install can refresh PATH in this script's scope.
 . (Join-Path $PSScriptRoot 'ensure-prereqs.ps1')
 
@@ -66,14 +66,14 @@ if ([string]::IsNullOrWhiteSpace($Token)) {
     throw "Token is required (run install-linux.sh on the host first; it prints the token)."
 }
 
-# ── 2. Publish hub (same project, win-x64 + net8.0-windows TFM) ───────────────
+# ── 2. Publish hub (same project, win-x64 + net10.0-windows TFM) ───────────────
 
 Write-Host "Publishing ankd.exe..."
 $hubProj    = Join-Path $PSScriptRoot "..\hub\AnchorHub.Hub\AnchorHub.Hub.csproj"
 $publishOut = Join-Path $PSScriptRoot "bin"
 if (Test-Path $publishOut) { Remove-Item -Recurse -Force $publishOut }
 dotnet publish $hubProj -c Release -r win-x64 --self-contained true `
-    -f net8.0-windows `
+    -f net10.0-windows `
     /p:PublishSingleFile=true `
     /p:IncludeNativeLibrariesForSelfExtract=true `
     -o $publishOut

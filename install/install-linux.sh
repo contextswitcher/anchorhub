@@ -33,16 +33,16 @@ REMOTE="${ANCHORHUB_REMOTE:-127.0.0.1:9876}"
 # ── Prereqs ───────────────────────────────────────────────────────────────────
 
 command -v dotnet >/dev/null || {
-    echo "dotnet SDK (>= 8) not found in PATH. Install it, e.g.:" >&2
+    echo "dotnet SDK (>= 10) not found in PATH. Install it, e.g.:" >&2
     echo "    Arch / CachyOS : sudo pacman -S dotnet-sdk" >&2
-    echo "    Debian / Ubuntu: sudo apt install dotnet-sdk-8.0" >&2
-    echo "    Fedora         : sudo dnf install dotnet-sdk-8.0" >&2
-    echo "    Other          : https://dotnet.microsoft.com/download/dotnet/8.0" >&2
+    echo "    Debian / Ubuntu: sudo apt install dotnet-sdk-10.0" >&2
+    echo "    Fedora         : sudo dnf install dotnet-sdk-10.0" >&2
+    echo "    Other          : https://dotnet.microsoft.com/download/dotnet/10.0" >&2
     exit 1
 }
 command -v xxd    >/dev/null || { echo "xxd not found (install vim-common)." >&2; exit 1; }
 
-# ── 1. Publish the Linux build (forwarder mode only — net8.0 TFM
+# ── 1. Publish the Linux build (forwarder mode only — net10.0 TFM
 #       excludes the OneNote COM bridge automatically). ────────────────────────
 
 echo "Publishing ankd (linux-x64) → $INSTALL_DIR"
@@ -52,7 +52,7 @@ dotnet publish "$HUB_PROJ" \
     -c Release \
     -r linux-x64 \
     --self-contained true \
-    -f net8.0 \
+    -f net10.0 \
     -p:PublishSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -o "$INSTALL_DIR" \

@@ -2,7 +2,7 @@
 # install/install-mac.sh
 #
 # macOS (Apple Silicon) installer for the AnchorHub JabRef fulltext
-# provider + Chrome. No OneNote, no Windows VM: the net8.0 build runs the
+# provider + Chrome. No OneNote, no Windows VM: the net10.0 build runs the
 # native-messaging host with a null OneNote backend and serves the JabRef
 # fulltext realm (and Graph sign-in) natively. See
 # docs/requirements/anchorhub.md (req~ank.platform.macos~1).
@@ -43,15 +43,15 @@ EXT_ID='bhnaeoglhfolnnkciokfdinoghhjlfeh'
 # ── Prereqs ───────────────────────────────────────────────────────────────────
 
 command -v dotnet >/dev/null || {
-    echo "dotnet SDK (>= 8) not found in PATH. Install it, e.g.:" >&2
+    echo "dotnet SDK (>= 10) not found in PATH. Install it, e.g.:" >&2
     echo "    brew install --cask dotnet-sdk" >&2
-    echo "    or https://dotnet.microsoft.com/download/dotnet/8.0" >&2
+    echo "    or https://dotnet.microsoft.com/download/dotnet/10.0" >&2
     exit 1
 }
 command -v jq >/dev/null || { echo "jq not found (brew install jq) — needed to inject the Chrome key." >&2; exit 1; }
 command -v openssl >/dev/null || { echo "openssl not found — needed to generate the token." >&2; exit 1; }
 
-# ── 1. Publish the macOS build (net8.0 TFM excludes the OneNote COM
+# ── 1. Publish the macOS build (net10.0 TFM excludes the OneNote COM
 #       bridge automatically; osx-arm64 = Apple Silicon). ─────────────────────
 
 echo "Publishing ankd (osx-arm64) → $INSTALL_DIR"
@@ -61,7 +61,7 @@ dotnet publish "$HUB_PROJ" \
     -c Release \
     -r osx-arm64 \
     --self-contained true \
-    -f net8.0 \
+    -f net10.0 \
     -p:PublishSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -o "$INSTALL_DIR" \

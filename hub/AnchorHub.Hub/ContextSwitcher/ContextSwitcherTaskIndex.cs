@@ -27,7 +27,7 @@ internal sealed record ContextSwitcherMatch(string TaskId, string Title, string 
 /// (planned interface, contextswitcher#47).
 ///
 /// Pure file IO + YAML — no COM — so this compiles and runs on every daemon
-/// target, including the plain net8.0 (Linux forwarder) build.
+/// target, including the plain net10.0 (Linux forwarder) build.
 internal sealed class ContextSwitcherTaskIndex
 {
     // ContextSwitcher's TaskRepository excludes these two reserved names from

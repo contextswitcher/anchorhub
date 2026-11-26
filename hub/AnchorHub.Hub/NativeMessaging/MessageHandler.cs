@@ -61,7 +61,7 @@ internal sealed class MessageHandler : IDisposable
 
     // ── graph sign-in ─────────────────────────────────────────────────────────
     // OAuth 2.0 PKCE flow on a one-shot loopback listener. Cross-platform —
-    // the helper is plain net8.0 code so this action works on Linux too.
+    // the helper is plain net10.0 code so this action works on Linux too.
 
     private static async Task<object> GraphSignInAsync(string? requestId, JsonElement msg, CancellationToken ct)
     {
