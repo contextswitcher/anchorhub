@@ -41,7 +41,7 @@ not whether to use a VM.
   OAuth/MSAL, and only works for notebooks stored in OneDrive /
   SharePoint.
 * **Option C — Run the existing Windows daemon under Wine** on Linux.
-  No VM; one process; reuses the .NET 8 binary. Depends on Wine's
+  No VM; one process; reuses the .NET 10 binary. Depends on Wine's
   ability to host the OneNote COM server.
 * **Option D — Drive OneNote-for-Web via a headless browser** (e.g.
   Playwright on Linux). DOM scraping replaces COM.

@@ -97,7 +97,7 @@ suffices — no YAML dependency for path resolution.
 
 The adapter is pure file IO plus YAML parsing (YamlDotNet, mirroring the
 SnakeYAML output ContextSwitcher writes). Unlike the OneNote COM bridge it
-compiles and runs on the plain `net8.0` (Linux forwarder) target too, so
+compiles and runs on the plain `net10.0` (Linux forwarder) target too, so
 the action lives outside the `#if WINDOWS` fence and does not touch the
 OneNote backend.
 
