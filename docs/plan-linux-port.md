@@ -87,12 +87,12 @@ references `OneNoteClient` directly.
 
 ### 2. Multi-target the hub csproj — ✅ `f670015`
 
-- `<TargetFrameworks>net8.0;net8.0-windows</TargetFrameworks>` in
+- `<TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>` in
   `AnchorHub.Hub.csproj`.
 - Conditionally include `OneNoteClient.cs` and the
   `LocalOneNoteBackend` adapter under `'$(TargetFramework)' ==
-  'net8.0-windows'` only.
-- Verify `dotnet publish -r linux-x64 -f net8.0` produces a binary that
+  'net10.0-windows'` only.
+- Verify `dotnet publish -r linux-x64 -f net10.0` produces a binary that
   excludes the COM code.
 
 **Done when:** Linux build succeeds without bringing in
@@ -152,7 +152,7 @@ within ~1 s; restarting it flips back.
 
 - `install/install-linux.sh`:
   - `dotnet publish -c Release -r linux-x64 --self-contained true
-    -p:PublishSingleFile=true -f net8.0` → `~/.local/share/anchorhub/ankd`
+    -p:PublishSingleFile=true -f net10.0` → `~/.local/share/anchorhub/ankd`
   - Generate token, write to `~/.config/anchorhub/token`
   - Write Firefox native messaging manifest to
     `~/.mozilla/native-messaging-hosts/io.github.contextswitcher.anchorhub.json`,

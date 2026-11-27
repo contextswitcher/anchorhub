@@ -240,7 +240,7 @@ from its queue or, if already in flight, closes the tab and aborts the
 download.
 
 **Implementation note (phase 1):** `HttpListener` (used by ankd in
-.NET 8) does not surface mid-request client disconnect as a
+.NET 10) does not surface mid-request client disconnect as a
 cancellation token — there is no built-in equivalent of Kestrel's
 `HttpContext.RequestAborted`. As a result, phase 1 relies on the
 safety-valve timer (90 s) to fire abort when the client has gone away
